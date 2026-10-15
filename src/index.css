@@ -449,7 +449,45 @@ p, span, label, input, button {
   .grid-2 { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 640px) {
-  .main-content { padding: 14px 12px 100px; }
-  .grid-4 { grid-template-columns: 1fr; }
+@media (max-width: 940px) {
+  .main-content { 
+    padding-bottom: 96px; 
+  }
 }
+
+@media (max-width: 640px) {
+  .main-content { 
+    padding: 14px 12px 105px; 
+  }
+  .grid-4 { 
+    grid-template-columns: 1fr; 
+  }
+  
+  /* Responsive Modals */
+  .modal-overlay {
+    padding: 10px 8px;
+    align-items: flex-end;
+  }
+  .modal-card {
+    max-height: 92vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    width: 100%;
+  }
+  .modal-header {
+    padding: 14px 16px;
+  }
+  .modal-body {
+    padding: 14px 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .modal-footer {
+    padding: 12px 16px;
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
