@@ -1,0 +1,6 @@
+# robots.txt for Aro Health & Nutrition Tracker (https://aro-bls.pages.dev)
+User-agent: *
+Allow: /
+
+# Canonical Sitemap
+Sitemap: https://aro-bls.pages.dev/sitemap.xml

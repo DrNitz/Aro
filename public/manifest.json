@@ -1,0 +1,57 @@
+{
+  "name": "Aro — Open Nutrition & Fitness Tracker",
+  "short_name": "Aro Health",
+  "description": "Free, physician-led nutrition, macro and workout tracker powered by Open Food Facts and open exercise databases. 100% private with zero paywalls.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["health", "fitness", "lifestyle", "medical"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "64x64 128x128 256x256",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/dr_aro_mascot.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Food Diary",
+      "short_name": "Diary",
+      "description": "View daily logged meals and net calories",
+      "url": "/#diary",
+      "icons": [{ "src": "/favicon.svg", "sizes": "64x64" }]
+    },
+    {
+      "name": "Search Foods",
+      "short_name": "Foods",
+      "description": "Search foods or scan barcodes",
+      "url": "/#food",
+      "icons": [{ "src": "/favicon.svg", "sizes": "64x64" }]
+    },
+    {
+      "name": "Workouts & Exercises",
+      "short_name": "Workouts",
+      "description": "Browse 870+ exercises with form guides",
+      "url": "/#exercise",
+      "icons": [{ "src": "/favicon.svg", "sizes": "64x64" }]
+    },
+    {
+      "name": "Clinical Goals & Profile",
+      "short_name": "Goals",
+      "description": "Mifflin-St Jeor TDEE and macro prescription",
+      "url": "/#goals",
+      "icons": [{ "src": "/favicon.svg", "sizes": "64x64" }]
+    }
+  ]
+}

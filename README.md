@@ -82,6 +82,12 @@ npm run preview
   * [Free Exercise DB](https://github.com/yuhonas/free-exercise-db)
   * [Compendium of Physical Activities (MET)](https://sites.google.com/site/compendiumofphysicalactivities/)
 
+## 🔍 Search Engine Optimization (SEO) & PWA
+* **Physician E-E-A-T Structured Data**: Schema.org JSON-LD graph declaring `WebApplication` and `MedicalWebPage` with physician attribution.
+* **Progressive Web App (PWA)**: Full offline-capable `manifest.json` and Service Worker (`sw.js`). Installable on iOS Safari, Android Chrome, and Desktop with zero app store fees.
+* **Social Sharing**: Open Graph & Twitter Cards with 3D Aro mascot visual previews.
+* **Crawlability**: Automated `sitemap.xml` and `robots.txt` optimized for Cloudflare Pages edge deployment.
+
 ---
 
 ## 📄 License

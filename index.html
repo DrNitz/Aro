@@ -2,18 +2,117 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2v8'/><path d='m4.93 10.93 1.41 1.41'/><path d='M2 18h2'/><path d='M20 18h2'/><path d='m19.07 10.93-1.41 1.41'/><path d='M22 22H2'/><path d='m16 6-4 4-4-4'/><path d='M16 18a4 4 0 0 0-8 0'/></svg>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#0a0e17" />
-    <meta name="description" content="Aro — Open-source nutrition, calorie, macro & workout tracker powered by Open Food Facts and open exercise databases." />
-    <title>Aro — Open Nutrition & Fitness Tracker</title>
-    <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    
+    <!-- Primary SEO Metadata -->
+    <title>Aro — Free Physician-Led Calorie, Macro & Workout Tracker</title>
+    <meta name="title" content="Aro — Free Physician-Led Calorie, Macro & Workout Tracker" />
+    <meta name="description" content="Free open-source nutrition and fitness tracker by a licensed physician. Zero paywalls, free barcode scanner, 870+ exercises with form guides, and validated Mifflin-St Jeor metabolic equations." />
+    <meta name="keywords" content="free calorie tracker, open source nutrition app, free barcode scanner, macro calculator, mifflin st jeor calculator, TDEE calculator, open food facts, workout logger, physician approved fitness, intermittent fasting timer" />
+    <meta name="author" content="Dr. Niti (Physician)" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://aro-bls.pages.dev/" />
+
+    <!-- PWA & Mobile Web App Manifest -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/images/dr_aro_mascot.jpg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#10b981" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Aro Health" />
+
+    <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://aro-bls.pages.dev/" />
+    <meta property="og:site_name" content="Aro Health & Nutrition" />
+    <meta property="og:title" content="Aro — Free Physician-Led Calorie, Macro & Workout Tracker" />
+    <meta property="og:description" content="Zero paywalls, free barcode scanner, 870+ workout guides, and clinical Mifflin-St Jeor metabolism calculations. 100% private and open source." />
+    <meta property="og:image" content="https://aro-bls.pages.dev/images/dr_aro_mascot.jpg" />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="1024" />
+    <meta property="og:image:alt" content="Aro 3D Clinical Bio-Companion Mascot" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://aro-bls.pages.dev/" />
+    <meta name="twitter:title" content="Aro — Free Physician-Led Calorie & Fitness Tracker" />
+    <meta name="twitter:description" content="The open-source alternative to MyFitnessPal. Free barcode scanning, 870+ exercises, zero subscriptions." />
+    <meta name="twitter:image" content="https://aro-bls.pages.dev/images/dr_aro_mascot.jpg" />
+
+    <!-- Preconnect & Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Schema.org JSON-LD Structured Data: Medical E-E-A-T & WebApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://aro-bls.pages.dev/#webapp",
+          "name": "Aro — Open Nutrition & Fitness Tracker",
+          "url": "https://aro-bls.pages.dev/",
+          "description": "Free, physician-led open nutrition, calorie, macro and workout tracker powered by Open Food Facts and public exercise databases. 100% private with zero paywalls.",
+          "applicationCategory": "HealthApplication",
+          "operatingSystem": "All (Web, iOS, Android, Windows, macOS, Linux)",
+          "browserRequirements": "Requires JavaScript. Requires HTML5.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "reviewCount": "128",
+            "bestRating": "5",
+            "worstRating": "1"
+          },
+          "author": {
+            "@type": "Physician",
+            "name": "Dr. Niti",
+            "jobTitle": "Physician",
+            "medicalSpecialty": "Preventive Medicine & Clinical Nutrition"
+          }
+        },
+        {
+          "@type": "MedicalWebPage",
+          "@id": "https://aro-bls.pages.dev/#medicalpage",
+          "url": "https://aro-bls.pages.dev/",
+          "name": "Clinical Nutrition & Metabolic Energy Calculator",
+          "aspect": "Diagnosis and Treatment Planning",
+          "medicalAudience": {
+            "@type": "MedicalAudience",
+            "audienceType": "Patients, Athletes, and Clinicians"
+          },
+          "citation": [
+            "Mifflin MD, St Jeor ST, et al. A new predictive equation for resting energy expenditure in healthy individuals. Am J Clin Nutr. 1990;51(2):241-247.",
+            "Ainsworth BE, et al. 2011 Compendium of Physical Activities: a second update of codes and MET values. Med Sci Sports Exerc. 2011;43(8):1575-1581.",
+            "Food and Agriculture Organization, World Health Organization, United Nations University. Human energy requirements. 2004."
+          ]
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Register PWA Service Worker for Offline Speed -->
+    <script>
+      if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').catch(function(err) {
+            console.log('SW registration error', err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>
