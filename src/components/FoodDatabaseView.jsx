@@ -51,29 +51,12 @@ export default function FoodDatabaseView({
     return food.category.toLowerCase().includes(selectedCategory.toLowerCase());
   });
 
-  // Auto-search Open Food Facts live database with 400ms debounce
+  // Clear live search results when query is emptied
   useEffect(() => {
-    const trimmed = searchQuery.trim();
-    if (trimmed.length < 2) {
+    if (!searchQuery.trim()) {
       setLiveResults([]);
-      setIsSearchingLive(false);
-      return;
+      setLiveSearchedQuery('');
     }
-
-    const timer = setTimeout(async () => {
-      setIsSearchingLive(true);
-      setLiveSearchedQuery(trimmed);
-      try {
-        const results = await searchOpenFoodFacts(trimmed, 24);
-        setLiveResults(results);
-      } catch (err) {
-        console.error('Error during live food search:', err);
-      } finally {
-        setIsSearchingLive(false);
-      }
-    }, 400);
-
-    return () => clearTimeout(timer);
   }, [searchQuery]);
 
   // Immediate Search Open Food Facts Live (on Enter or Button click)
