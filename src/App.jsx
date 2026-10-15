@@ -171,7 +171,7 @@ export default function App() {
   ];
   const caloriesEaten = allFoods.reduce((acc, f) => acc + (f.calories || 0), 0);
   const caloriesBurned = (diary.workouts || []).reduce((acc, w) => acc + (w.caloriesBurned || 0), 0);
-  const netCalories = Math.max(0, caloriesEaten - caloriesBurned);
+  const netCalories = caloriesEaten - caloriesBurned;
 
   return (
     <div className="app-container">

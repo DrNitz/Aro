@@ -14,11 +14,11 @@ export default function MacroRing({
   fiberEaten,
   targetFiber
 }) {
-  const netCalories = Math.max(0, caloriesEaten - caloriesBurned);
+  const netCalories = caloriesEaten - caloriesBurned;
   const remainingCalories = targetCalories - netCalories;
 
   // Percentage calculations capped for ring drawing
-  const calPercent = Math.min(100, Math.round((netCalories / (targetCalories || 2000)) * 100));
+  const calPercent = Math.min(100, Math.max(0, Math.round((netCalories / (targetCalories || 2000)) * 100)));
   const proteinPercent = Math.min(100, Math.round((proteinEaten / (targetProtein || 150)) * 100));
   const carbsPercent = Math.min(100, Math.round((carbsEaten / (targetCarbs || 200)) * 100));
   const fatPercent = Math.min(100, Math.round((fatEaten / (targetFat || 65)) * 100));
@@ -143,26 +143,33 @@ export default function MacroRing({
 
         {/* Right: Detailed Breakdown & Energy Equation */}
         <div className="macro-details-col">
-          {/* Energy Equation: Base - Eaten + Burned = Remaining */}
+          {/* Energy Equation: Target Goal | + Food Logged - Burned (Ex) = Net Calories */}
           <div className="energy-equation-bar">
             <div className="equation-item">
               <span className="eq-label">Target Goal</span>
               <span className="eq-val mono">{targetCalories.toLocaleString()}</span>
             </div>
-            <span className="eq-sign">-</span>
+
+            <div className="eq-divider" aria-hidden="true"></div>
+
+            <span className="eq-sign text-coral">+</span>
             <div className="equation-item">
               <span className="eq-label text-coral">Food Logged</span>
               <span className="eq-val mono text-coral">{caloriesEaten.toLocaleString()}</span>
             </div>
-            <span className="eq-sign">+</span>
+
+            <span className="eq-sign text-cyan">-</span>
             <div className="equation-item">
               <span className="eq-label text-cyan">Burned (Ex)</span>
               <span className="eq-val mono text-cyan">{caloriesBurned.toLocaleString()}</span>
             </div>
+
             <span className="eq-sign">=</span>
             <div className="equation-item highlight-eq">
               <span className="eq-label text-primary">Net Calories</span>
-              <span className="eq-val mono text-primary">{netCalories.toLocaleString()}</span>
+              <span className={`eq-val mono ${netCalories < 0 ? 'text-cyan' : 'text-primary'}`}>
+                {netCalories < 0 ? `-${Math.abs(netCalories).toLocaleString()}` : netCalories.toLocaleString()}
+              </span>
             </div>
           </div>
 

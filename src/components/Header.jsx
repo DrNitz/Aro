@@ -143,7 +143,7 @@ export default function Header({
           <div className="net-calorie-pill" title="Daily Net Calories (Food - Exercise / Target)">
             <Flame size={15} className="net-cal-icon" />
             <div className="net-cal-numbers">
-              <span className="net-cal-val">{netCalories.toLocaleString()}</span>
+              <span className={`net-cal-val ${netCalories < 0 ? 'text-cyan' : ''}`}>{netCalories.toLocaleString()}</span>
               <span className="net-cal-target">/ {targetCalories.toLocaleString()} kcal</span>
             </div>
           </div>
