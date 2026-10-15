@@ -371,30 +371,47 @@ export default function BodyPlannerView({
             </div>
           </div>
 
-          {/* BMI Card */}
+          {/* Senior UI Clinical BMI Spectrum Meter */}
           {bmiInfo && (
             <div className="glass-card bmi-summary-card">
-              <div className="card-header">
-                <div className="card-title">
-                  <Scale className="text-cyan" size={18} />
-                  <span>Body Mass Index (Quetelet Index)</span>
+              <div className="clinical-bmi-meter-card" style={{ padding: 0, background: 'transparent', border: 'none' }}>
+                <div className="bmi-meter-top">
+                  <div className="bmi-meter-title-wrap">
+                    <span className="bmi-meter-label">Body Mass Index (BMI)</span>
+                    <span className="bmi-meter-subtitle">WHO Clinical Metric (Quetelet Index)</span>
+                  </div>
+                  <div className="bmi-meter-value-wrap">
+                    <span className="bmi-number mono">{bmiInfo.value}</span>
+                    <span className="bmi-unit">kg/m²</span>
+                    <span className={`bmi-status-chip bmi-status-${(bmiInfo.status || '').toLowerCase().replace(/[^a-z]/g, '')}`}>
+                      {bmiInfo.status}
+                    </span>
+                  </div>
                 </div>
-                <span className="badge" style={{ background: bmiInfo.color, color: '#fff' }}>
-                  {bmiInfo.status}
-                </span>
-              </div>
 
-              <div className="card-body bmi-body-row">
-                <div className="bmi-number-col">
-                  <span className="bmi-large-val mono">{bmiInfo.value}</span>
-                  <span className="bmi-sub">kg/m²</span>
+                {/* Segmented Gradient Spectrum Bar */}
+                <div className="bmi-spectrum-track">
+                  <div className="bmi-segment seg-underweight" title="Underweight (< 18.5)"></div>
+                  <div className="bmi-segment seg-normal" title="Normal / Healthy (18.5 - 24.9)"></div>
+                  <div className="bmi-segment seg-overweight" title="Pre-obesity / Overweight (25 - 29.9)"></div>
+                  <div className="bmi-segment seg-obese" title="Obesity (≥ 30)"></div>
+                  
+                  {/* Live Animated Needle Marker */}
+                  <div 
+                    className="bmi-needle-indicator" 
+                    style={{ left: `${Math.min(96, Math.max(4, ((bmiInfo.value - 15) / (35 - 15)) * 100))}%` }}
+                  >
+                    <div className="bmi-needle-pin"></div>
+                    <span className="bmi-needle-tag mono">{bmiInfo.value}</span>
+                  </div>
                 </div>
 
-                <div className="bmi-ranges-bar">
-                  <div className="bmi-bar-segment seg-under" title="Underweight < 18.5"></div>
-                  <div className="bmi-bar-segment seg-normal" title="Normal 18.5 - 24.9"></div>
-                  <div className="bmi-bar-segment seg-over" title="Overweight 25 - 29.9"></div>
-                  <div className="bmi-bar-segment seg-obese" title="Obese 30+"></div>
+                {/* Spectrum Scale Labels */}
+                <div className="bmi-scale-labels">
+                  <span>&lt; 18.5 (Under)</span>
+                  <span>18.5–24.9 (Healthy)</span>
+                  <span>25–29.9 (Overweight)</span>
+                  <span>≥ 30 (Obese)</span>
                 </div>
               </div>
             </div>
