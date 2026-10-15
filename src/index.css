@@ -152,8 +152,8 @@ p, span, label, input, button {
 /* Glass Card */
 .glass-card {
   background: var(--bg-card);
-  backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
+  backdrop-filter: var(--backdrop-blur);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
@@ -200,6 +200,7 @@ p, span, label, input, button {
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -341,8 +342,8 @@ p, span, label, input, button {
   position: fixed;
   inset: 0;
   background: rgba(4, 7, 13, 0.75);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -478,7 +479,6 @@ p, span, label, input, button {
   }
   .modal-body {
     padding: 14px 16px;
-    -webkit-overflow-scrolling: touch;
   }
   .modal-footer {
     padding: 12px 16px;
