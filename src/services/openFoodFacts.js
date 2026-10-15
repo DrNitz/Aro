@@ -10,15 +10,18 @@ export function normalizeOffProduct(raw) {
   if (!raw) return null;
   const nutriments = raw.nutriments || {};
 
-  // Extract calories: energy-kcal_100g, or convert energy-kj / 4.184
+  // Extract calories: energy-kcal_100g, energy-kcal, energy-kcal_value, or convert energy-kj / 4.184
   let calories = 0;
   if (nutriments['energy-kcal_100g'] !== undefined) {
     calories = Math.round(Number(nutriments['energy-kcal_100g']) || 0);
   } else if (nutriments['energy-kcal'] !== undefined) {
     calories = Math.round(Number(nutriments['energy-kcal']) || 0);
+  } else if (nutriments['energy-kcal_value'] !== undefined) {
+    calories = Math.round(Number(nutriments['energy-kcal_value']) || 0);
   } else if (nutriments['energy_100g'] !== undefined) {
-    // Usually in kJ
     calories = Math.round((Number(nutriments['energy_100g']) || 0) / 4.184);
+  } else if (nutriments['energy'] !== undefined) {
+    calories = Math.round((Number(nutriments['energy']) || 0) / 4.184);
   }
 
   const protein = parseFloat((Number(nutriments.proteins_100g ?? nutriments.proteins ?? 0)).toFixed(1));
@@ -91,23 +94,20 @@ export async function fetchProductByBarcode(barcode) {
   const cleanCode = barcode.trim();
   if (!cleanCode) return null;
 
-  // Try direct OFF v2 API first
   const urls = [
+    `https://world.openfoodfacts.net/api/v0/product/${cleanCode}.json`,
+    `https://world.openfoodfacts.org/api/v0/product/${cleanCode}.json`,
+    `https://world.openfoodfacts.net/api/v2/product/${cleanCode}.json`,
     `https://world.openfoodfacts.org/api/v2/product/${cleanCode}.json`,
-    `/api/off/api/v2/product/${cleanCode}.json`,
-    `https://world.openfoodfacts.net/api/v2/product/${cleanCode}.json`
+    `/api/off/api/v2/product/${cleanCode}.json`
   ];
 
   for (const url of urls) {
     try {
-      const res = await fetch(url, {
-        headers: {
-          'User-Agent': USER_AGENT
-        }
-      });
+      const res = await fetch(url);
       if (!res.ok) continue;
       const data = await res.json();
-      if (data && data.status === 1 && data.product) {
+      if (data && (data.status === 1 || data.product) && data.product) {
         return normalizeOffProduct(data.product);
       }
     } catch {
@@ -120,43 +120,41 @@ export async function fetchProductByBarcode(barcode) {
 
 /**
  * Search Open Food Facts live database
+ * Queries highly-reliable CORS-enabled endpoints
  */
 export async function searchOpenFoodFacts(query, pageSize = 24) {
-  const q = encodeURIComponent(query.trim());
-  if (!q) return [];
+  const cleanQ = query.trim();
+  if (!cleanQ) return [];
+  const q = encodeURIComponent(cleanQ);
 
-  // 1. Try Search-a-licious / search API
-  try {
-    const searchUrl = `/api/off-search/search?q=${q}&page_size=${pageSize}`;
-    const res = await fetch(searchUrl, {
-      headers: { 'User-Agent': USER_AGENT }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const hits = data.hits || data.products || [];
-      if (hits.length > 0) {
-        return hits.map(normalizeOffProduct).filter(p => p.name && (p.calories > 0 || p.protein > 0 || p.carbs > 0));
-      }
-    }
-  } catch {
-    // fallback to world v2
-  }
+  const searchUrls = [
+    // 1. world.openfoodfacts.net search.pl (CORS-enabled, 100% direct browser support)
+    `https://world.openfoodfacts.net/cgi/search.pl?search_terms=${q}&search_simple=1&action=process&json=1&page_size=${pageSize}`,
+    // 2. world.openfoodfacts.org search.pl mirror
+    `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${q}&search_simple=1&action=process&json=1&page_size=${pageSize}`,
+    // 3. Local proxy if available
+    `/api/off-search/search?q=${q}&page_size=${pageSize}`,
+    // 4. search.openfoodfacts.org
+    `https://search.openfoodfacts.org/search?q=${q}&page_size=${pageSize}`
+  ];
 
-  // 2. Try world.openfoodfacts.org v2 search endpoint
-  try {
-    const v2Url = `https://world.openfoodfacts.org/api/v2/search?search_terms=${q}&page_size=${pageSize}&fields=code,product_name,brands,nutriments,image_front_small_url,nutriscore_grade,nova_group,serving_size,serving_quantity`;
-    const res = await fetch(v2Url, {
-      headers: { 'User-Agent': USER_AGENT }
-    });
-    if (res.ok) {
+  for (const url of searchUrls) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
       const data = await res.json();
-      const products = data.products || [];
-      if (products.length > 0) {
-        return products.map(normalizeOffProduct).filter(p => p.name);
+      const items = data.products || data.hits || [];
+      if (Array.isArray(items) && items.length > 0) {
+        const normalized = items
+          .map(normalizeOffProduct)
+          .filter(p => p && p.name && (p.calories > 0 || p.protein > 0 || p.carbs > 0 || p.fat > 0));
+        if (normalized.length > 0) {
+          return normalized;
+        }
       }
+    } catch {
+      // try next URL
     }
-  } catch {
-    // fallback
   }
 
   return [];

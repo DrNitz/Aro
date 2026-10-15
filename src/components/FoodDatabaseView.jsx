@@ -51,15 +51,41 @@ export default function FoodDatabaseView({
     return food.category.toLowerCase().includes(selectedCategory.toLowerCase());
   });
 
-  // Handle Search Open Food Facts Live
+  // Auto-search Open Food Facts live database with 400ms debounce
+  useEffect(() => {
+    const trimmed = searchQuery.trim();
+    if (trimmed.length < 2) {
+      setLiveResults([]);
+      setIsSearchingLive(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearchingLive(true);
+      setLiveSearchedQuery(trimmed);
+      try {
+        const results = await searchOpenFoodFacts(trimmed, 24);
+        setLiveResults(results);
+      } catch (err) {
+        console.error('Error during live food search:', err);
+      } finally {
+        setIsSearchingLive(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Immediate Search Open Food Facts Live (on Enter or Button click)
   const handleSearchOpenFoodFacts = async (e) => {
     if (e) e.preventDefault();
-    if (!searchQuery.trim()) return;
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
 
     setIsSearchingLive(true);
-    setLiveSearchedQuery(searchQuery.trim());
+    setLiveSearchedQuery(trimmed);
     try {
-      const results = await searchOpenFoodFacts(searchQuery.trim(), 24);
+      const results = await searchOpenFoodFacts(trimmed, 24);
       setLiveResults(results);
     } catch (err) {
       console.error(err);
@@ -158,23 +184,26 @@ export default function FoodDatabaseView({
 
         {/* Search Input Bar */}
         <form onSubmit={handleSearchOpenFoodFacts} className="search-input-wrapper">
-          <Search size={20} className="search-icon" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search whole foods, brands, or dishes (e.g. Greek Yogurt, Salmon, Nutella)..."
-            className="food-search-input"
-          />
-          {searchQuery && (
-            <button 
-              type="button" 
-              className="clear-search-btn"
-              onClick={() => { setSearchQuery(''); setLiveResults([]); }}
-            >
-              <X size={16} />
-            </button>
-          )}
+          <div className="search-field-box">
+            <Search size={20} className="search-icon" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search foods, dishes, or brands (e.g. Roti, Chips, Greek Yogurt)..."
+              className="food-search-input"
+            />
+            {searchQuery && (
+              <button 
+                type="button" 
+                className="clear-search-btn"
+                onClick={() => { setSearchQuery(''); setLiveResults([]); }}
+                aria-label="Clear search"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
 
           <button 
             type="submit" 
@@ -182,7 +211,7 @@ export default function FoodDatabaseView({
             disabled={isSearchingLive || !searchQuery.trim()}
           >
             {isSearchingLive ? <Loader2 size={16} className="spin" /> : <Globe size={16} />}
-            <span>Search Open Food Facts</span>
+            <span>Search Online</span>
           </button>
         </form>
 
@@ -268,14 +297,25 @@ export default function FoodDatabaseView({
           <span className="results-count mono">{filteredLocalFoods.length} items</span>
         </div>
 
-        {filteredLocalFoods.length === 0 ? (
+        {isSearchingLive && liveResults.length === 0 ? (
+          <div className="no-foods-card glass-card">
+            <Loader2 size={32} className="spin text-cyan" />
+            <p>Searching Open Food Facts global database for "{searchQuery}"...</p>
+          </div>
+        ) : filteredLocalFoods.length === 0 && liveResults.length === 0 ? (
           <div className="no-foods-card glass-card">
             <Apple size={36} className="text-dim" />
-            <p>No verified foods match "{searchQuery}".</p>
-            <button className="btn btn-primary btn-sm" onClick={handleSearchOpenFoodFacts}>
+            <p>No verified local foods match "{searchQuery}".</p>
+            <button className="btn btn-primary btn-sm" onClick={handleSearchOpenFoodFacts} disabled={isSearchingLive}>
               <Globe size={15} />
               <span>Search Open Food Facts API for "{searchQuery}"</span>
             </button>
+          </div>
+        ) : filteredLocalFoods.length === 0 && liveResults.length > 0 ? (
+          <div className="no-foods-card glass-card" style={{ padding: '16px' }}>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Showing {liveResults.length} Open Food Facts products for "{searchQuery}" above.
+            </p>
           </div>
         ) : (
           <div className="food-cards-grid grid-3">
