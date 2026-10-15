@@ -19,9 +19,13 @@ export default function FoodDetailModal({
   const currentProtein = parseFloat((food.protein * factor).toFixed(1));
   const currentCarbs = parseFloat((food.carbs * factor).toFixed(1));
   const currentFat = parseFloat((food.fat * factor).toFixed(1));
+  const currentSaturatedFat = parseFloat(((food.saturatedFat || 0) * factor).toFixed(1));
   const currentFiber = parseFloat(((food.fiber || 0) * factor).toFixed(1));
   const currentSugar = parseFloat(((food.sugar || 0) * factor).toFixed(1));
   const currentSodium = Math.round((food.sodium || 0) * factor);
+  const currentPotassium = Math.round((food.potassium || 0) * factor);
+  const currentCalcium = Math.round((food.calcium || 0) * factor);
+  const currentMagnesium = Math.round((food.magnesium || 0) * factor);
 
   const handleLogFood = () => {
     // trigger celebration confetti
@@ -46,7 +50,13 @@ export default function FoodDetailModal({
       protein: currentProtein,
       carbs: currentCarbs,
       fat: currentFat,
+      saturatedFat: currentSaturatedFat,
       fiber: currentFiber,
+      sugar: currentSugar,
+      sodium: currentSodium,
+      potassium: currentPotassium,
+      calcium: currentCalcium,
+      magnesium: currentMagnesium,
       image: food.image,
       nutriscore: food.nutriscore,
       nova: food.nova,

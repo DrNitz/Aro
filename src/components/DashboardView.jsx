@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MacroRing from './MacroRing';
+import ClinicalAuditPanel from './ClinicalAuditPanel';
 import { 
   Plus, 
   Trash2, 
@@ -45,8 +46,24 @@ export default function DashboardView({
   const totalCarbsEaten = allFoodLogs.reduce((acc, item) => acc + (item.carbs || 0), 0);
   const totalFatEaten = allFoodLogs.reduce((acc, item) => acc + (item.fat || 0), 0);
   const totalFiberEaten = allFoodLogs.reduce((acc, item) => acc + (item.fiber || 0), 0);
+  const totalSodium = allFoodLogs.reduce((acc, item) => acc + (item.sodium || 0), 0);
+  const totalPotassium = allFoodLogs.reduce((acc, item) => acc + (item.potassium || 0), 0);
+  const totalSaturatedFat = allFoodLogs.reduce((acc, item) => acc + (item.saturatedFat || 0), 0);
+  const totalCalcium = allFoodLogs.reduce((acc, item) => acc + (item.calcium || 0), 0);
+  const totalMagnesium = allFoodLogs.reduce((acc, item) => acc + (item.magnesium || 0), 0);
+  const totalSugar = allFoodLogs.reduce((acc, item) => acc + (item.sugar || 0), 0);
 
   const totalCaloriesBurned = workouts.reduce((acc, w) => acc + (w.caloriesBurned || 0), 0);
+
+  // Active Clinical Protocol state
+  const [activeProtocolId, setActiveProtocolId] = useState(() => {
+    return localStorage.getItem('aro_active_clinical_protocol') || 'aha_standard';
+  });
+
+  const handleSelectProtocol = (id) => {
+    setActiveProtocolId(id);
+    localStorage.setItem('aro_active_clinical_protocol', id);
+  };
 
   // Water Handling
   const handleAddWater = (amountMl) => {
@@ -275,6 +292,22 @@ export default function DashboardView({
           </div>
         </div>
       </div>
+
+      {/* Doctor's Micronutrient & Electrolyte Clinical Audit */}
+      <ClinicalAuditPanel
+        totals={{
+          sodium: totalSodium,
+          potassium: totalPotassium,
+          fiber: totalFiberEaten,
+          saturatedFat: totalSaturatedFat,
+          calcium: totalCalcium,
+          magnesium: totalMagnesium,
+          sugar: totalSugar
+        }}
+        totalCaloriesEaten={totalCaloriesEaten}
+        activeProtocolId={activeProtocolId}
+        onSelectProtocol={handleSelectProtocol}
+      />
 
       {/* Meals Log Section */}
       <div className="meals-section-header">

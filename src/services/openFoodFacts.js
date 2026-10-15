@@ -24,9 +24,22 @@ export function normalizeOffProduct(raw) {
   const protein = parseFloat((Number(nutriments.proteins_100g ?? nutriments.proteins ?? 0)).toFixed(1));
   const carbs = parseFloat((Number(nutriments.carbohydrates_100g ?? nutriments.carbohydrates ?? 0)).toFixed(1));
   const fat = parseFloat((Number(nutriments.fat_100g ?? nutriments.fat ?? 0)).toFixed(1));
+  const saturatedFat = parseFloat((Number(nutriments['saturated-fat_100g'] ?? nutriments['saturated-fat'] ?? 0)).toFixed(1));
   const fiber = parseFloat((Number(nutriments.fiber_100g ?? nutriments.fiber ?? 0)).toFixed(1));
   const sugar = parseFloat((Number(nutriments.sugars_100g ?? nutriments.sugars ?? 0)).toFixed(1));
   const sodium = Math.round((Number(nutriments.sodium_100g ?? 0) * 1000) || (Number(nutriments.salt_100g ?? 0) * 400));
+
+  // Potassium in mg
+  const potRaw = Number(nutriments.potassium_100g ?? nutriments.potassium ?? 0);
+  const potassium = potRaw > 20 ? Math.round(potRaw) : Math.round(potRaw * 1000);
+
+  // Calcium in mg
+  const caRaw = Number(nutriments.calcium_100g ?? nutriments.calcium ?? 0);
+  const calcium = caRaw > 20 ? Math.round(caRaw) : Math.round(caRaw * 1000);
+
+  // Magnesium in mg
+  const mgRaw = Number(nutriments.magnesium_100g ?? nutriments.magnesium ?? 0);
+  const magnesium = mgRaw > 20 ? Math.round(mgRaw) : Math.round(mgRaw * 1000);
 
   const nutriscore = (raw.nutriscore_grade || raw.nutrition_grades || '').toLowerCase();
   const nova = raw.nova_group || raw.nova_groups || null;
@@ -51,9 +64,13 @@ export function normalizeOffProduct(raw) {
     protein,
     carbs,
     fat,
+    saturatedFat,
     fiber,
     sugar,
     sodium,
+    potassium,
+    calcium,
+    magnesium,
     servingSize: 100,
     servingUnit: "g",
     commonServing: {
