@@ -15,7 +15,8 @@ import {
   Zap,
   Maximize2,
   X,
-  Eye
+  Eye,
+  BookOpen
 } from 'lucide-react';
 import { MET_ACTIVITIES } from '../data/metActivities';
 import WorkoutLoggerModal from './WorkoutLoggerModal';
@@ -30,9 +31,8 @@ export default function ExerciseDatabaseView({
   const [selectedMuscle, setSelectedMuscle] = useState('All');
   const [selectedEquipment, setSelectedEquipment] = useState('All');
   const [selectedLevel, setSelectedLevel] = useState('All');
-  const [expandedExerciseId, setExpandedExerciseId] = useState(null);
   const [selectedExerciseForLogging, setSelectedExerciseForLogging] = useState(null);
-  const [lightboxImage, setLightboxImage] = useState(null);
+  const [selectedExerciseDetail, setSelectedExerciseDetail] = useState(null);
 
   // Load exercises.json from public directory
   useEffect(() => {
@@ -253,129 +253,86 @@ export default function ExerciseDatabaseView({
           </button>
         </div>
       ) : (
-        <div className="exercise-cards-grid grid-2">
-          {filteredExercises.slice(0, 50).map((ex) => {
-            const isExpanded = expandedExerciseId === ex.id;
+        <div className="exercise-cards-grid">
+          {filteredExercises.slice(0, 60).map((ex) => {
             const primaryMuscle = ex.primaryMuscles?.[0] || 'General';
             const hasImages = ex.images && ex.images.length > 0;
+            const thumbUrl = hasImages ? getExerciseImageUrl(ex.images[0]) : null;
 
             return (
-              <div key={ex.id} className="glass-card exercise-card">
-                {/* Header with Title, Badges, and Quick Log Button */}
-                <div className="exercise-card-header">
-                  <div className="exercise-title-meta">
-                    <h3 className="exercise-name">{ex.name}</h3>
-                    <div className="exercise-badge-row">
-                      <span className="badge badge-purple">{primaryMuscle}</span>
-                      {ex.equipment && (
-                        <span className="badge badge-cyan">{ex.equipment}</span>
-                      )}
-                      {ex.level && (
-                        <span className="badge badge-gray">{ex.level}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => setSelectedExerciseForLogging(ex)}
-                  >
-                    <Plus size={14} />
-                    <span>Log Sets</span>
-                  </button>
+              <div 
+                key={ex.id} 
+                className="glass-card exercise-card"
+                onClick={() => setSelectedExerciseDetail(ex)}
+                title="Click to view both expanded demonstration postures & biomechanics"
+              >
+                {/* Small Thumbnail */}
+                <div className="exercise-thumb-wrap">
+                  {thumbUrl ? (
+                    <img
+                      src={thumbUrl}
+                      alt={ex.name}
+                      className="exercise-thumb-img"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        if (e.target.parentElement) {
+                          e.target.parentElement.classList.add('has-no-thumb');
+                        }
+                      }}
+                    />
+                  ) : (
+                    <Dumbbell size={24} className="exercise-thumb-placeholder" />
+                  )}
                 </div>
 
-                {/* Card Body with Enlarged Image Previews */}
-                <div className="exercise-card-body">
-                  {/* Enlarged Demonstration Image Strip on the Card */}
-                  {hasImages && (
-                    <div className="exercise-card-image-preview-strip">
-                      {ex.images.slice(0, 2).map((img, i) => (
-                        <div 
-                          key={i} 
-                          className="exercise-image-card"
-                          onClick={() => setLightboxImage({
-                            url: getExerciseImageUrl(img),
-                            title: ex.name,
-                            step: i + 1,
-                            total: ex.images.length,
-                            instructions: ex.instructions
-                          })}
-                          title="Click to view high-resolution full-screen posture"
-                        >
-                          <img
-                            src={getExerciseImageUrl(img)}
-                            alt={`${ex.name} Step ${i + 1}`}
-                            className="exercise-demo-photo"
-                            onError={(e) => { e.target.parentElement.style.display = 'none'; }}
-                          />
-                          <div className="exercise-image-overlay">
-                            <span className="step-badge">
-                              Step {i + 1}: {i === 0 ? 'Starting Posture' : 'Peak Contraction'}
-                            </span>
-                            <span className="zoom-hint-pill">
-                              <Maximize2 size={12} />
-                              <span>Enlarge</span>
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                {/* Exercise Meta Content */}
+                <div className="exercise-card-content">
+                  <div className="exercise-name-row">
+                    <h3 className="exercise-name">{ex.name}</h3>
+                  </div>
 
-                  {/* Primary Instruction Preview */}
+                  <div className="exercise-badge-row">
+                    <span className="badge badge-purple">{primaryMuscle}</span>
+                    {ex.equipment && (
+                      <span className="badge badge-cyan">{ex.equipment}</span>
+                    )}
+                    {ex.level && (
+                      <span className="badge badge-gray">{ex.level}</span>
+                    )}
+                  </div>
+
                   {ex.instructions && ex.instructions.length > 0 && (
-                    <p className="instruction-preview">
+                    <p className="instruction-preview-compact">
                       {ex.instructions[0]}
                     </p>
                   )}
 
-                  {/* Expandable Accordion for full instructions & detailed biomechanics */}
-                  {isExpanded && (
-                    <div className="exercise-expanded-content">
-                      <h4 className="instructions-title">Step-by-Step Biomechanics Guide:</h4>
-                      <ol className="instructions-list">
-                        {(ex.instructions || []).map((step, idx) => (
-                          <li key={idx}>
-                            <strong>Step {idx + 1}: </strong>
-                            {step}
-                          </li>
-                        ))}
-                      </ol>
-
-                      {ex.secondaryMuscles && ex.secondaryMuscles.length > 0 && (
-                        <div className="secondary-muscles-tag">
-                          <span>Secondary Supporting Muscles: </span>
-                          <strong>{ex.secondaryMuscles.join(', ')}</strong>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="exercise-card-bottom-actions">
+                  <div className="exercise-card-actions-compact">
                     <button 
-                      className="btn-expand-instructions"
-                      onClick={() => toggleExpand(ex.id)}
+                      type="button"
+                      className="btn-open-detail"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedExerciseDetail(ex);
+                      }}
                     >
-                      <span>{isExpanded ? 'Hide Biomechanics Guide' : 'Full Instructions & Form Guide'}</span>
-                      {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                      <Eye size={13} />
+                      <span>Expand Form & Guide</span>
                     </button>
 
-                    {hasImages && (
-                      <button 
-                        className="btn-view-large"
-                        onClick={() => setLightboxImage({
-                          url: getExerciseImageUrl(ex.images[0]),
-                          title: ex.name,
-                          step: 1,
-                          total: ex.images.length,
-                          instructions: ex.instructions
-                        })}
-                      >
-                        <Eye size={14} />
-                        <span>Enlarge Photos</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedExerciseForLogging(ex);
+                      }}
+                      title="Log sets into diary"
+                    >
+                      <Plus size={13} />
+                      <span>Log Sets</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -384,43 +341,120 @@ export default function ExerciseDatabaseView({
         </div>
       )}
 
-      {/* High-Resolution Full-Screen Image Lightbox Modal */}
-      {lightboxImage && (
-        <div className="modal-overlay lightbox-overlay" onClick={() => setLightboxImage(null)}>
-          <div className="lightbox-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="lightbox-header">
-              <div className="lightbox-title-wrap">
-                <h3 className="lightbox-title">{lightboxImage.title}</h3>
-                <span className="lightbox-step-sub">
-                  Demonstration Step {lightboxImage.step} of {lightboxImage.total}
-                </span>
+      {/* Cool Glassy Popup: Dual Expanded Images + Instructions Downside */}
+      {selectedExerciseDetail && (
+        <div 
+          className="glassy-popup-overlay" 
+          onClick={() => setSelectedExerciseDetail(null)}
+        >
+          <div 
+            className="glassy-popup-card" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="glassy-popup-header">
+              <div className="glassy-popup-title-group">
+                <h3 className="glassy-popup-title">{selectedExerciseDetail.name}</h3>
+                <div className="exercise-badge-row">
+                  <span className="badge badge-purple">
+                    {selectedExerciseDetail.primaryMuscles?.[0] || 'General'}
+                  </span>
+                  {selectedExerciseDetail.equipment && (
+                    <span className="badge badge-cyan">{selectedExerciseDetail.equipment}</span>
+                  )}
+                  {selectedExerciseDetail.level && (
+                    <span className="badge badge-gray">{selectedExerciseDetail.level}</span>
+                  )}
+                  {selectedExerciseDetail.category && (
+                    <span className="badge badge-primary">{selectedExerciseDetail.category}</span>
+                  )}
+                </div>
               </div>
+
               <button 
+                type="button"
                 className="btn-icon btn-secondary" 
-                onClick={() => setLightboxImage(null)}
-                aria-label="Close enlarged image"
+                onClick={() => setSelectedExerciseDetail(null)}
+                aria-label="Close details"
               >
-                <X size={20} />
+                <X size={19} />
               </button>
             </div>
 
-            <div className="lightbox-image-viewport">
-              <img 
-                src={lightboxImage.url} 
-                alt={lightboxImage.title} 
-                className="lightbox-full-img"
-              />
+            {/* Modal Scrollable Body */}
+            <div className="glassy-popup-scroll">
+              {/* Both Images Expanded Side-by-Side (NO Step 1 / Step 2 green badges) */}
+              {selectedExerciseDetail.images && selectedExerciseDetail.images.length > 0 && (
+                <div className="glassy-dual-images-grid">
+                  {selectedExerciseDetail.images.slice(0, 2).map((img, i) => (
+                    <div key={i} className="glassy-image-stage">
+                      <img 
+                        src={getExerciseImageUrl(img)} 
+                        alt={`${selectedExerciseDetail.name} Posture ${i + 1}`} 
+                        className="glassy-expanded-img"
+                        onError={(e) => { e.target.parentElement.style.display = 'none'; }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Instructions Downside */}
+              <div className="glassy-instructions-downside">
+                <div className="glassy-instructions-header">
+                  <BookOpen size={17} className="text-primary" />
+                  <span>Step-by-Step Biomechanics & Form Execution</span>
+                </div>
+
+                <div className="glassy-steps-list">
+                  {selectedExerciseDetail.instructions && selectedExerciseDetail.instructions.length > 0 ? (
+                    selectedExerciseDetail.instructions.map((step, idx) => (
+                      <div key={idx} className="glassy-step-item">
+                        <span className="glassy-step-num">{idx + 1}</span>
+                        <div className="glassy-step-text">{step}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-muted" style={{ fontSize: '0.86rem' }}>
+                      Follow standard movement mechanics for {selectedExerciseDetail.name}. Maintain controlled cadence, neutral spine, and full range of motion.
+                    </p>
+                  )}
+                </div>
+
+                {/* Secondary Muscles */}
+                {selectedExerciseDetail.secondaryMuscles && selectedExerciseDetail.secondaryMuscles.length > 0 && (
+                  <div className="glassy-secondary-muscles">
+                    <span>Secondary Supporting Muscles:</span>
+                    {selectedExerciseDetail.secondaryMuscles.map((muscle) => (
+                      <span key={muscle} className="badge badge-secondary">
+                        {muscle}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {lightboxImage.instructions && lightboxImage.instructions[lightboxImage.step - 1] && (
-              <div className="lightbox-caption-box">
-                <p>{lightboxImage.instructions[lightboxImage.step - 1]}</p>
-              </div>
-            )}
-
-            <div className="lightbox-footer">
-              <button className="btn btn-secondary" onClick={() => setLightboxImage(null)}>
-                Close Preview
+            {/* Modal Footer */}
+            <div className="glassy-popup-footer">
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={() => setSelectedExerciseDetail(null)}
+              >
+                Close
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                onClick={() => {
+                  const ex = selectedExerciseDetail;
+                  setSelectedExerciseDetail(null);
+                  setSelectedExerciseForLogging(ex);
+                }}
+              >
+                <Plus size={16} />
+                <span>Log Sets for This Workout</span>
               </button>
             </div>
           </div>
