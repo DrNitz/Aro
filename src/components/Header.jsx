@@ -23,7 +23,6 @@ export default function Header({
   targetCalories,
   theme,
   toggleTheme,
-  onLoadDemo,
   onOpenDataModal
 }) {
   const isToday = () => {
@@ -146,16 +145,6 @@ export default function Header({
               <span className="net-cal-target">/ {targetCalories.toLocaleString()} kcal</span>
             </div>
           </div>
-
-          {/* Demo Button */}
-          <button 
-            className="btn btn-secondary btn-sm" 
-            onClick={onLoadDemo}
-            title="Load sample realistic meals and workout"
-          >
-            <Sparkles size={14} className="text-amber" />
-            <span className="hide-on-mobile">Demo Day</span>
-          </button>
 
           {/* Backup / Export */}
           <button 

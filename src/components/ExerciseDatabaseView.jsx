@@ -12,7 +12,10 @@ import {
   Plus, 
   Layers,
   Sparkles,
-  Zap
+  Zap,
+  Maximize2,
+  X,
+  Eye
 } from 'lucide-react';
 import { MET_ACTIVITIES } from '../data/metActivities';
 import WorkoutLoggerModal from './WorkoutLoggerModal';
@@ -29,6 +32,7 @@ export default function ExerciseDatabaseView({
   const [selectedLevel, setSelectedLevel] = useState('All');
   const [expandedExerciseId, setExpandedExerciseId] = useState(null);
   const [selectedExerciseForLogging, setSelectedExerciseForLogging] = useState(null);
+  const [lightboxImage, setLightboxImage] = useState(null);
 
   // Load exercises.json from public directory
   useEffect(() => {
@@ -43,7 +47,6 @@ export default function ExerciseDatabaseView({
       })
       .catch((err) => {
         console.warn('Fallback loading exercises:', err);
-        // Fallback curated set
         setExercises([
           {
             id: 'barbell-bench-press',
@@ -57,7 +60,8 @@ export default function ExerciseDatabaseView({
               'Lie back on a flat bench. Using a medium width grip, lift the bar from the rack.',
               'Lower the bar slowly down to your mid-chest.',
               'Pause, then push the bar back up to the starting position.'
-            ]
+            ],
+            images: ['Barbell_Bench_Press_-_Medium_Grip/0.jpg', 'Barbell_Bench_Press_-_Medium_Grip/1.jpg']
           },
           {
             id: 'barbell-squat',
@@ -71,21 +75,8 @@ export default function ExerciseDatabaseView({
               'Rest the barbell securely on the upper trapezius muscles.',
               'Squat down by bending hips and knees until thighs are parallel or below parallel.',
               'Push through your heels back to starting position.'
-            ]
-          },
-          {
-            id: 'barbell-deadlift',
-            name: 'Barbell Conventional Deadlift',
-            equipment: 'barbell',
-            category: 'strength',
-            level: 'intermediate',
-            primaryMuscles: ['lower back', 'glutes', 'hamstrings'],
-            secondaryMuscles: ['forearms', 'lats', 'traps'],
-            instructions: [
-              'Stand with feet hip-width apart under the bar.',
-              'Hinge at hips, grip the bar with straight arms.',
-              'Drive feet into floor and stand tall, locking hips and knees.'
-            ]
+            ],
+            images: ['Barbell_Full_Squat/0.jpg', 'Barbell_Full_Squat/1.jpg']
           }
         ]);
         setLoading(false);
@@ -163,7 +154,7 @@ export default function ExerciseDatabaseView({
           <div>
             <h2 className="banner-title">Open Exercise & Workout Database</h2>
             <p className="banner-sub">
-              Browse over 870+ public domain exercises with muscle targeting, instructions, and workout logging
+              Browse over 870+ public domain exercises with high-resolution visual posture guides, muscle targeting, and set logging
             </p>
           </div>
 
@@ -238,7 +229,7 @@ export default function ExerciseDatabaseView({
         </div>
       </div>
 
-      {/* Exercises Grid */}
+      {/* Exercises Grid Header */}
       <div className="exercise-results-header">
         <span className="results-count mono">
           Showing {filteredExercises.length} of {exercises.length} exercises
@@ -270,6 +261,7 @@ export default function ExerciseDatabaseView({
 
             return (
               <div key={ex.id} className="glass-card exercise-card">
+                {/* Header with Title, Badges, and Quick Log Button */}
                 <div className="exercise-card-header">
                   <div className="exercise-title-meta">
                     <h3 className="exercise-name">{ex.name}</h3>
@@ -293,58 +285,145 @@ export default function ExerciseDatabaseView({
                   </button>
                 </div>
 
-                {/* Primary Muscle & Instruction Preview */}
+                {/* Card Body with Enlarged Image Previews */}
                 <div className="exercise-card-body">
+                  {/* Enlarged Demonstration Image Strip on the Card */}
+                  {hasImages && (
+                    <div className="exercise-card-image-preview-strip">
+                      {ex.images.slice(0, 2).map((img, i) => (
+                        <div 
+                          key={i} 
+                          className="exercise-image-card"
+                          onClick={() => setLightboxImage({
+                            url: getExerciseImageUrl(img),
+                            title: ex.name,
+                            step: i + 1,
+                            total: ex.images.length,
+                            instructions: ex.instructions
+                          })}
+                          title="Click to view high-resolution full-screen posture"
+                        >
+                          <img
+                            src={getExerciseImageUrl(img)}
+                            alt={`${ex.name} Step ${i + 1}`}
+                            className="exercise-demo-photo"
+                            onError={(e) => { e.target.parentElement.style.display = 'none'; }}
+                          />
+                          <div className="exercise-image-overlay">
+                            <span className="step-badge">
+                              Step {i + 1}: {i === 0 ? 'Starting Posture' : 'Peak Contraction'}
+                            </span>
+                            <span className="zoom-hint-pill">
+                              <Maximize2 size={12} />
+                              <span>Enlarge</span>
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Primary Instruction Preview */}
                   {ex.instructions && ex.instructions.length > 0 && (
                     <p className="instruction-preview">
                       {ex.instructions[0]}
                     </p>
                   )}
 
-                  {/* Expandable Accordion for full instructions and demo photos */}
+                  {/* Expandable Accordion for full instructions & detailed biomechanics */}
                   {isExpanded && (
                     <div className="exercise-expanded-content">
-                      {hasImages && (
-                        <div className="exercise-demo-images">
-                          {ex.images.map((img, i) => (
-                            <img
-                              key={i}
-                              src={getExerciseImageUrl(img)}
-                              alt={`${ex.name} step ${i + 1}`}
-                              className="exercise-demo-photo"
-                              onError={(e) => { e.target.style.display = 'none'; }}
-                            />
-                          ))}
-                        </div>
-                      )}
-
-                      <h4 className="instructions-title">Step-by-Step Instructions:</h4>
+                      <h4 className="instructions-title">Step-by-Step Biomechanics Guide:</h4>
                       <ol className="instructions-list">
                         {(ex.instructions || []).map((step, idx) => (
-                          <li key={idx}>{step}</li>
+                          <li key={idx}>
+                            <strong>Step {idx + 1}: </strong>
+                            {step}
+                          </li>
                         ))}
                       </ol>
 
                       {ex.secondaryMuscles && ex.secondaryMuscles.length > 0 && (
                         <div className="secondary-muscles-tag">
-                          <span>Secondary Muscles: </span>
+                          <span>Secondary Supporting Muscles: </span>
                           <strong>{ex.secondaryMuscles.join(', ')}</strong>
                         </div>
                       )}
                     </div>
                   )}
 
-                  <button 
-                    className="btn-expand-instructions"
-                    onClick={() => toggleExpand(ex.id)}
-                  >
-                    <span>{isExpanded ? 'Hide Details' : 'View Instructions & Guide'}</span>
-                    {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-                  </button>
+                  <div className="exercise-card-bottom-actions">
+                    <button 
+                      className="btn-expand-instructions"
+                      onClick={() => toggleExpand(ex.id)}
+                    >
+                      <span>{isExpanded ? 'Hide Biomechanics Guide' : 'Full Instructions & Form Guide'}</span>
+                      {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                    </button>
+
+                    {hasImages && (
+                      <button 
+                        className="btn-view-large"
+                        onClick={() => setLightboxImage({
+                          url: getExerciseImageUrl(ex.images[0]),
+                          title: ex.name,
+                          step: 1,
+                          total: ex.images.length,
+                          instructions: ex.instructions
+                        })}
+                      >
+                        <Eye size={14} />
+                        <span>Enlarge Photos</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* High-Resolution Full-Screen Image Lightbox Modal */}
+      {lightboxImage && (
+        <div className="modal-overlay lightbox-overlay" onClick={() => setLightboxImage(null)}>
+          <div className="lightbox-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="lightbox-header">
+              <div className="lightbox-title-wrap">
+                <h3 className="lightbox-title">{lightboxImage.title}</h3>
+                <span className="lightbox-step-sub">
+                  Demonstration Step {lightboxImage.step} of {lightboxImage.total}
+                </span>
+              </div>
+              <button 
+                className="btn-icon btn-secondary" 
+                onClick={() => setLightboxImage(null)}
+                aria-label="Close enlarged image"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="lightbox-image-viewport">
+              <img 
+                src={lightboxImage.url} 
+                alt={lightboxImage.title} 
+                className="lightbox-full-img"
+              />
+            </div>
+
+            {lightboxImage.instructions && lightboxImage.instructions[lightboxImage.step - 1] && (
+              <div className="lightbox-caption-box">
+                <p>{lightboxImage.instructions[lightboxImage.step - 1]}</p>
+              </div>
+            )}
+
+            <div className="lightbox-footer">
+              <button className="btn btn-secondary" onClick={() => setLightboxImage(null)}>
+                Close Preview
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -134,6 +134,25 @@ export default function WorkoutLoggerModal({
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
+            {/* Enlarged Exercise Form Visual Guide */}
+            {exercise.images && exercise.images.length > 0 && (
+              <div className="workout-logger-image-preview">
+                {exercise.images.slice(0, 2).map((img, i) => (
+                  <div key={i} className="logger-image-card">
+                    <img
+                      src={`https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${img}`}
+                      alt={`${exercise.name} Step ${i + 1}`}
+                      className="logger-demo-img"
+                      onError={(e) => { e.target.parentElement.style.display = 'none'; }}
+                    />
+                    <span className="logger-step-badge">
+                      Step {i + 1}: {i === 0 ? 'Starting Posture' : 'Contraction'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {isCardio ? (
               /* Cardio Logger Form */
               <div className="cardio-logger-form">

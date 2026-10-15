@@ -20,7 +20,6 @@ import {
   getStoredTheme,
   saveStoredTheme
 } from './services/storage';
-import { getSampleDayDiary } from './data/sampleData';
 import './App.css';
 
 export default function App() {
@@ -53,18 +52,7 @@ export default function App() {
   // Load Diary when currentDate changes
   useEffect(() => {
     const d = getDayDiary(currentDate);
-    // If today is completely blank on very first launch, populate sample day so user sees the app alive!
-    const isBlank = (!d.meals?.breakfast?.length && !d.meals?.lunch?.length && !d.workouts?.length && d.waterMl === 0);
-    const hasVisited = localStorage.getItem('aro_has_visited');
-    
-    if (isBlank && !hasVisited) {
-      const sample = getSampleDayDiary(currentDate);
-      saveDayDiary(currentDate, sample);
-      setDiary(sample);
-      localStorage.setItem('aro_has_visited', 'true');
-    } else {
-      setDiary(d);
-    }
+    setDiary(d);
   }, [currentDate]);
 
   // Toggle Theme
@@ -142,14 +130,6 @@ export default function App() {
     setActiveTab('diary');
   };
 
-  // Load Sample Demo Day
-  const handleLoadDemoDay = () => {
-    const sample = getSampleDayDiary(currentDate);
-    handleUpdateDiary(sample);
-    showToast('Loaded realistic sample day diary! 🥗🏋️');
-    setActiveTab('diary');
-  };
-
   // Clear all data
   const handleClearAllData = () => {
     localStorage.clear();
@@ -189,7 +169,6 @@ export default function App() {
         targetCalories={profile.targetCalories || 2150}
         theme={theme}
         toggleTheme={toggleTheme}
-        onLoadDemo={handleLoadDemoDay}
         onOpenDataModal={() => setShowDataModal(true)}
       />
 
@@ -256,7 +235,6 @@ export default function App() {
       {showDataModal && (
         <DataManagementModal
           onClose={() => setShowDataModal(false)}
-          onLoadDemo={handleLoadDemoDay}
           onDataImported={() => {
             setProfile(getProfile());
             setDiary(getDayDiary(currentDate));

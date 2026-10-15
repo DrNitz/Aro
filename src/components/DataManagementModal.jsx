@@ -4,7 +4,6 @@ import {
   Download, 
   Upload, 
   ShieldCheck, 
-  Sparkles, 
   Trash2, 
   AlertTriangle, 
   Check, 
@@ -14,7 +13,6 @@ import { exportAllData, importAllData } from '../services/storage';
 
 export default function DataManagementModal({
   onClose,
-  onLoadDemo,
   onDataImported,
   onClearAllData
 }) {
@@ -106,26 +104,6 @@ export default function DataManagementModal({
               <span>{importStatus.msg}</span>
             </div>
           )}
-
-          {/* Demo Day Loader */}
-          <div className="demo-loader-row glass-card">
-            <div className="demo-loader-info">
-              <Sparkles size={20} className="text-amber" />
-              <div>
-                <strong>Explore with Sample Demo Day</strong>
-                <p>Loads a realistic day with oats, chicken, salmon, bench press, running, and water tracking.</p>
-              </div>
-            </div>
-            <button 
-              className="btn btn-secondary btn-sm" 
-              onClick={() => {
-                onLoadDemo();
-                onClose();
-              }}
-            >
-              Load Demo
-            </button>
-          </div>
 
           {/* Reset / Danger Zone */}
           <div className="danger-zone-card">
