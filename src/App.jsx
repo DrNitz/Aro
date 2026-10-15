@@ -6,6 +6,7 @@ import ExerciseDatabaseView from './components/ExerciseDatabaseView';
 import BodyPlannerView from './components/BodyPlannerView';
 import DataManagementModal from './components/DataManagementModal';
 import WorkoutLoggerModal from './components/WorkoutLoggerModal';
+import OnboardingModal from './components/OnboardingModal';
 import { 
   getProfile, 
   saveProfile, 
@@ -36,6 +37,11 @@ export default function App() {
   const [customFoods, setCustomFoods] = useState(getCustomFoods());
   const [weightHistory, setWeightHistory] = useState(getWeightHistory());
   const [fastingState, setFastingState] = useState(getFastingState());
+
+  // First-time visitor clinical onboarding state
+  const [showOnboardingModal, setShowOnboardingModal] = useState(() => {
+    return !localStorage.getItem('aro_profile_setup_done');
+  });
 
   // UI Flow States
   const [targetMealForAdd, setTargetMealForAdd] = useState('breakfast');
@@ -79,6 +85,16 @@ export default function App() {
     setProfile(newProfile);
     saveProfile(newProfile);
     showToast('Updated your personal calorie & macro targets! 🎯');
+  };
+
+  // Onboarding completion handler
+  const handleCompleteOnboarding = (updatedProfile) => {
+    setProfile(updatedProfile);
+    saveProfile(updatedProfile);
+    localStorage.setItem('aro_profile_setup_done', 'true');
+    setShowOnboardingModal(false);
+    showToast(`Welcome! Your clinical baseline of ${updatedProfile.targetCalories} kcal has been activated! 🩺🎯`);
+    setActiveTab('diary');
   };
 
   // Fasting update
@@ -170,6 +186,7 @@ export default function App() {
         theme={theme}
         toggleTheme={toggleTheme}
         onOpenDataModal={() => setShowDataModal(true)}
+        onOpenOnboarding={() => setShowOnboardingModal(true)}
       />
 
       {/* Main Content Area */}
@@ -211,9 +228,19 @@ export default function App() {
             onUpdateProfile={handleUpdateProfile}
             weightHistory={weightHistory}
             onLogWeight={handleLogWeight}
+            onOpenOnboarding={() => setShowOnboardingModal(true)}
           />
         )}
       </main>
+
+      {/* First-Time Visitor Clinical Onboarding Modal */}
+      {showOnboardingModal && (
+        <OnboardingModal
+          currentProfile={profile}
+          onComplete={handleCompleteOnboarding}
+          onClose={() => setShowOnboardingModal(false)}
+        />
+      )}
 
       {/* Quick Workout Logger Modal from Dashboard */}
       {quickWorkoutModal && (

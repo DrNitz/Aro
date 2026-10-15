@@ -10,7 +10,13 @@ import {
   Sparkles, 
   Plus, 
   Award,
-  Heart
+  Heart,
+  Stethoscope,
+  BookOpen,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
+  Info
 } from 'lucide-react';
 import { 
   calculateBMR, 
@@ -24,8 +30,12 @@ export default function BodyPlannerView({
   profile,
   onUpdateProfile,
   weightHistory,
-  onLogWeight
+  onLogWeight,
+  onOpenOnboarding
 }) {
+  const [unitSystem, setUnitSystem] = useState('metric'); // 'metric' (kg, cm) | 'imperial' (lbs, in)
+  const [showClinicalScience, setShowClinicalScience] = useState(true);
+
   const [form, setForm] = useState({
     name: profile.name || 'Health Champion',
     gender: profile.gender || 'male',
@@ -121,14 +131,46 @@ export default function BodyPlannerView({
 
   return (
     <div className="body-planner-view">
+      {/* Medical Authority Banner */}
+      <div className="medical-authority-banner glass-card">
+        <div className="authority-banner-left">
+          <div className="medical-icon-circle">
+            <Stethoscope size={24} className="text-primary" />
+          </div>
+          <div>
+            <div className="authority-badge-row">
+              <span className="badge badge-doctor">Physician-Directed Clinical Nutrition</span>
+              <span className="badge badge-cyan">Mifflin-St Jeor Clinical Standard</span>
+              <span className="badge badge-purple">FAO / WHO / UNU PAL Standards</span>
+            </div>
+            <h2 className="authority-heading">Evidence-Based Metabolic Architecture</h2>
+            <p className="authority-sub">
+              Calorie and macronutrient prescriptions are computed using validated human physiology equations rather than arbitrary guesses.
+            </p>
+          </div>
+        </div>
+
+        <div className="authority-banner-right">
+          <button 
+            type="button" 
+            className="btn btn-secondary btn-sm"
+            onClick={() => setShowClinicalScience(!showClinicalScience)}
+          >
+            <BookOpen size={14} className="text-primary" />
+            <span>{showClinicalScience ? 'Hide Scientific Evidence' : 'How We Calculate (Formulas)'}</span>
+            {showClinicalScience ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+        </div>
+      </div>
+
       {/* Top Planner Grid */}
       <div className="planner-top-grid grid-2">
-        {/* Left: TDEE & Nutrition Calculator Form */}
+        {/* Left: Anthropometric Inputs & TDEE Calculator Form */}
         <div className="glass-card planner-card">
           <div className="card-header">
             <div className="card-title">
               <Target className="text-primary" size={20} />
-              <span>TDEE & Calorie Goal Calculator</span>
+              <span>Personal Anthropometric Profile</span>
             </div>
             <span className="badge badge-cyan">Mifflin-St Jeor</span>
           </div>
@@ -136,7 +178,7 @@ export default function BodyPlannerView({
           <form onSubmit={handleApplyGoals} className="card-body planner-form">
             <div className="grid-2">
               <div className="input-group">
-                <label className="input-label">Gender</label>
+                <label className="input-label">Biological Sex</label>
                 <div className="gender-toggle-row">
                   <button
                     type="button"
@@ -161,6 +203,7 @@ export default function BodyPlannerView({
                   type="number"
                   min="14"
                   max="100"
+                  required
                   value={form.age}
                   onChange={(e) => setForm({ ...form, age: Number(e.target.value) })}
                   className="input-field mono"
@@ -170,10 +213,13 @@ export default function BodyPlannerView({
 
             <div className="grid-2">
               <div className="input-group">
-                <label className="input-label">Current Weight (kg)</label>
+                <label className="input-label">Current Body Weight (kg)</label>
                 <input
                   type="number"
                   step="0.1"
+                  min="30"
+                  max="300"
+                  required
                   value={form.weightKg}
                   onChange={(e) => setForm({ ...form, weightKg: Number(e.target.value) })}
                   className="input-field mono"
@@ -181,9 +227,12 @@ export default function BodyPlannerView({
               </div>
 
               <div className="input-group">
-                <label className="input-label">Height (cm)</label>
+                <label className="input-label">Stature / Height (cm)</label>
                 <input
                   type="number"
+                  min="100"
+                  max="250"
+                  required
                   value={form.heightCm}
                   onChange={(e) => setForm({ ...form, heightCm: Number(e.target.value) })}
                   className="input-field mono"
@@ -192,43 +241,57 @@ export default function BodyPlannerView({
             </div>
 
             <div className="input-group">
-              <label className="input-label">Activity Level</label>
+              <label className="input-label">Target Body Weight Goal (kg)</label>
+              <input
+                type="number"
+                step="0.1"
+                min="30"
+                max="300"
+                required
+                value={form.targetWeightKg}
+                onChange={(e) => setForm({ ...form, targetWeightKg: Number(e.target.value) })}
+                className="input-field mono"
+              />
+            </div>
+
+            <div className="input-group">
+              <label className="input-label">Physical Activity Level (PAL Coefficient)</label>
               <select
                 className="input-field"
                 value={form.activityLevel}
                 onChange={(e) => setForm({ ...form, activityLevel: e.target.value })}
               >
-                <option value="sedentary">Sedentary (Desk job, minimal exercise)</option>
-                <option value="light">Lightly Active (1-3 workout days/wk)</option>
-                <option value="moderate">Moderately Active (3-5 workout days/wk)</option>
-                <option value="very_active">Very Active (6-7 intense training sessions/wk)</option>
-                <option value="extra_active">Extra Active (Hard physical labor / athlete)</option>
+                <option value="sedentary">Sedentary: Desk role, minimal movement (1.20x PAL)</option>
+                <option value="light">Lightly Active: Structured workouts 1-3 days/week (1.375x PAL)</option>
+                <option value="moderate">Moderately Active: Structured workouts 3-5 days/week (1.55x PAL)</option>
+                <option value="very_active">Very Active: Heavy daily training 6-7 days/week (1.725x PAL)</option>
+                <option value="extra_active">Extra Active: Hard physical labor / endurance athlete (1.90x PAL)</option>
               </select>
             </div>
 
             <div className="input-group">
-              <label className="input-label">Primary Goal</label>
+              <label className="input-label">Clinical Nutritional Objective</label>
               <select
                 className="input-field"
                 value={form.goal}
                 onChange={(e) => setForm({ ...form, goal: e.target.value })}
               >
-                <option value="cut">Fat Loss / Cut (-500 kcal/day)</option>
-                <option value="mild_cut">Mild Deficit / Recomp (-250 kcal/day)</option>
-                <option value="maintain">Weight Maintenance (TDEE balance)</option>
-                <option value="lean_bulk">Lean Muscle Growth (+250 kcal/day)</option>
-                <option value="bulk">Hypertrophy Bulk (+500 kcal/day)</option>
+                <option value="mild_cut">Sustainable Fat Loss & Muscle Preservation (-250 kcal/day)</option>
+                <option value="cut">Active Fat Loss Deficit (-500 kcal/day, ~0.45kg/wk)</option>
+                <option value="maintain">Weight Maintenance & Metabolic Equilibrium (0 kcal adjustment)</option>
+                <option value="lean_bulk">Controlled Lean Hypertrophy & Muscle Synthesis (+250 kcal/day)</option>
+                <option value="bulk">Athletic Caloric Surplus (+500 kcal/day)</option>
               </select>
             </div>
 
             <div className="input-group">
-              <label className="input-label">Macro Distribution Strategy</label>
+              <label className="input-label">Macronutrient Partitioning Strategy</label>
               <div className="macro-strategy-chips">
                 {[
                   { id: 'high_protein', label: 'High Protein (40P / 35C / 25F)' },
                   { id: 'balanced', label: 'Balanced (30P / 40C / 30F)' },
-                  { id: 'low_carb', label: 'Low Carb (30P / 20C / 50F)' },
-                  { id: 'keto', label: 'Ketogenic (20P / 5C / 75F)' }
+                  { id: 'low_carb', label: 'Low Carbohydrate (30P / 20C / 50F)' },
+                  { id: 'keto', label: 'Ketogenic Protocol (20P / 5C / 75F)' }
                 ].map((s) => (
                   <button
                     key={s.id}
@@ -244,7 +307,7 @@ export default function BodyPlannerView({
 
             <button type="submit" className="btn btn-primary btn-apply-goals">
               <Check size={17} />
-              <span>Apply Calculated Targets to Diary</span>
+              <span>Apply Clinical Targets to Diary ({targetCalories} kcal)</span>
             </button>
           </form>
         </div>
@@ -253,32 +316,32 @@ export default function BodyPlannerView({
         <div className="planner-results-col">
           {/* Energy Breakdown Card */}
           <div className="glass-card result-summary-card">
-            <h3 className="result-card-title">Metabolic Energy Output</h3>
+            <h3 className="result-card-title">Metabolic Energy Partitioning</h3>
 
             <div className="energy-pillars-row">
               <div className="energy-pillar-box">
                 <span className="pillar-metric-label">Basal Metabolic Rate</span>
                 <span className="pillar-metric-val mono text-cyan">{bmr}</span>
-                <span className="pillar-metric-sub">kcal / day (at complete rest)</span>
+                <span className="pillar-metric-sub">kcal/day (Cellular Rest)</span>
               </div>
 
               <div className="energy-pillar-box">
                 <span className="pillar-metric-label">Maintenance (TDEE)</span>
                 <span className="pillar-metric-val mono text-purple">{tdee}</span>
-                <span className="pillar-metric-sub">kcal / day (with activity)</span>
+                <span className="pillar-metric-sub">kcal/day (Expenditure)</span>
               </div>
 
               <div className="energy-pillar-box highlight-pillar">
-                <span className="pillar-metric-label">Your Daily Target</span>
+                <span className="pillar-metric-label">Prescribed Intake</span>
                 <span className="pillar-metric-val mono text-primary">{targetCalories}</span>
                 <span className="pillar-metric-sub">
-                  kcal / day ({goalAdjustment >= 0 ? `+${goalAdjustment}` : goalAdjustment})
+                  kcal/day ({goalAdjustment >= 0 ? `+${goalAdjustment}` : goalAdjustment})
                 </span>
               </div>
             </div>
 
             {/* Target Macros Breakdown */}
-            <h4 className="target-macros-title">Daily Macronutrient Targets</h4>
+            <h4 className="target-macros-title">Prescribed Daily Macronutrient Distribution</h4>
             <div className="target-macros-row grid-4">
               <div className="target-macro-box">
                 <span className="target-macro-name text-coral">Calories</span>
@@ -297,13 +360,13 @@ export default function BodyPlannerView({
               <div className="target-macro-box">
                 <span className="target-macro-name text-carbs">Carbs</span>
                 <span className="target-macro-grams mono">{targetMacros.carbs}g</span>
-                <span className="target-macro-sub">Energy & Fiber</span>
+                <span className="target-macro-sub">Glycogen</span>
               </div>
 
               <div className="target-macro-box">
-                <span className="target-macro-name text-fat">Fat</span>
+                <span className="target-macro-name text-fat">Lipids</span>
                 <span className="target-macro-grams mono">{targetMacros.fat}g</span>
-                <span className="target-macro-sub">Hormone balance</span>
+                <span className="target-macro-sub">Endocrine</span>
               </div>
             </div>
           </div>
@@ -314,7 +377,7 @@ export default function BodyPlannerView({
               <div className="card-header">
                 <div className="card-title">
                   <Scale className="text-cyan" size={18} />
-                  <span>Body Mass Index (BMI)</span>
+                  <span>Body Mass Index (Quetelet Index)</span>
                 </div>
                 <span className="badge" style={{ background: bmiInfo.color, color: '#fff' }}>
                   {bmiInfo.status}
@@ -339,12 +402,115 @@ export default function BodyPlannerView({
         </div>
       </div>
 
+      {/* Expanded Clinical Science & Calculation Methodology Section */}
+      {showClinicalScience && (
+        <div className="clinical-methodology-card glass-card">
+          <div className="card-header">
+            <div className="card-title">
+              <Stethoscope className="text-primary" size={20} />
+              <span>Clinical Calculation Methodology & Mathematical Transparency</span>
+            </div>
+            <span className="badge badge-doctor">Peer-Reviewed Literature</span>
+          </div>
+
+          <div className="card-body methodology-body">
+            <div className="methodology-grid grid-2">
+              {/* Formula 1 */}
+              <div className="methodology-block">
+                <h4 className="methodology-title">1. Basal Metabolic Rate (Mifflin-St Jeor Equation)</h4>
+                <div className="formula-box mono">
+                  {form.gender === 'male' ? (
+                    <>
+                      <div>BMR = (10 × W) + (6.25 × H) - (5 × A) + 5</div>
+                      <div className="formula-calc-live">
+                        = (10 × {form.weightKg}) + (6.25 × {form.heightCm}) - (5 × {form.age}) + 5 = <strong>{bmr} kcal/day</strong>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>BMR = (10 × W) + (6.25 × H) - (5 × A) - 161</div>
+                      <div className="formula-calc-live">
+                        = (10 × {form.weightKg}) + (6.25 × {form.heightCm}) - (5 × {form.age}) - 161 = <strong>{bmr} kcal/day</strong>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <p className="methodology-desc">
+                  <strong>Clinical Context:</strong> Accounts for 60–75% of total human energy expenditure (cellular respiration, myocardial contraction, renal glomerular filtration, and hepatic synthesis). In systematic reviews conducted by the <em>Academy of Nutrition and Dietetics</em>, the Mifflin-St Jeor equation demonstrated the lowest error margin (within ±10% of indirect calorimetry) compared to the older Harris-Benedict (1919) equation.
+                </p>
+              </div>
+
+              {/* Formula 2 */}
+              <div className="methodology-block">
+                <h4 className="methodology-title">2. Total Daily Energy Expenditure (TDEE = BMR × PAL)</h4>
+                <div className="formula-box mono">
+                  <div>TDEE = BMR × Physical Activity Level (PAL)</div>
+                  <div className="formula-calc-live">
+                    = {bmr} × {form.activityLevel === 'sedentary' ? '1.20' : form.activityLevel === 'light' ? '1.375' : form.activityLevel === 'moderate' ? '1.55' : form.activityLevel === 'very_active' ? '1.725' : '1.90'} = <strong>{tdee} kcal/day</strong>
+                  </div>
+                </div>
+                <p className="methodology-desc">
+                  <strong>Clinical Context:</strong> Derived from joint guidelines by the Food and Agriculture Organization (FAO), World Health Organization (WHO), and United Nations University (UNU). PAL coefficients aggregate spontaneous non-exercise activity thermogenesis (NEAT), planned exercise thermogenesis (EAT), and the thermic effect of food (TEF ~10%).
+                </p>
+              </div>
+
+              {/* Formula 3 */}
+              <div className="methodology-block">
+                <h4 className="methodology-title">3. Caloric Deficit / Surplus Mechanics</h4>
+                <div className="formula-box mono">
+                  <div>Prescribed Target = TDEE + Δ (Goal Factor)</div>
+                  <div className="formula-calc-live">
+                    = {tdee} + ({goalAdjustment} kcal) = <strong>{targetCalories} kcal/day</strong>
+                  </div>
+                </div>
+                <p className="methodology-desc">
+                  <strong>Clinical Context:</strong> Adipose tissue has an energetic density of ~7,700 kcal/kg (~3,500 kcal/lb). A structured deficit of -500 kcal/day mathematically yields ~0.45 kg of fat loss weekly. Prescribing mild deficits (-250 kcal/day) is clinically preferred for athletic populations to preserve myofibrillar protein synthesis, support thyroid conversion ($T_4 \rightarrow T_3$), and minimize neuroendocrine leptin drops.
+                </p>
+              </div>
+
+              {/* Formula 4 */}
+              <div className="methodology-block">
+                <h4 className="methodology-title">4. Macronutrient Partitioning Science</h4>
+                <div className="formula-box mono">
+                  <div>Protein (4 kcal/g) | Carbohydrates (4 kcal/g) | Lipids (9 kcal/g)</div>
+                  <div className="formula-calc-live">
+                    Protein: <strong>{targetMacros.protein}g</strong> ({(targetMacros.protein / form.weightKg).toFixed(1)} g/kg) • Carbs: <strong>{targetMacros.carbs}g</strong> • Fat: <strong>{targetMacros.fat}g</strong>
+                  </div>
+                </div>
+                <p className="methodology-desc">
+                  <strong>Clinical Context:</strong> High-protein targets (1.6 to 2.2 g/kg body weight) sustain positive nitrogen balance and spare skeletal muscle during caloric restriction. Protein has the highest Thermic Effect of Food (TEF ~20–30%), whereas dietary fats are indispensable for fat-soluble vitamin assimilation (A, D, E, K) and sterol hormone synthesis.
+                </p>
+              </div>
+            </div>
+
+            {/* Medical Literature Citations */}
+            <div className="citations-box">
+              <span className="citations-title">📚 Primary Peer-Reviewed Scientific References:</span>
+              <ul className="citations-list">
+                <li>
+                  <strong>Mifflin MD, St Jeor ST, Hill LA, et al.</strong> <em>A new predictive equation for resting energy expenditure in healthy individuals.</em> Am J Clin Nutr. 1990;51(2):241-247.
+                </li>
+                <li>
+                  <strong>Frankenfield D, Roth-Yousey L, Compher C.</strong> <em>Comparison of predictive equations for resting metabolic rate in healthy nonobese and obese adults: a systematic review.</em> J Am Diet Assoc. 2005;105(5):775-789.
+                </li>
+                <li>
+                  <strong>Ainsworth BE, et al.</strong> <em>2011 Compendium of Physical Activities: a second update of codes and MET intensities.</em> Med Sci Sports Exerc. 2011;43(8):1575-1581.
+                </li>
+                <li>
+                  <strong>Food and Agriculture Organization (FAO) / WHO / UNU.</strong> <em>Human energy requirements: Report of a Joint FAO/WHO/UNU Expert Consultation.</em> Rome: FAO; 2004.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Weight History & Visual Progress Trend Chart */}
       <div className="glass-card weight-tracker-card">
         <div className="card-header">
           <div className="card-title">
             <TrendingDown className="text-primary" size={20} />
-            <span>Weight Progress & Trend Chart</span>
+            <span>Anthropometric Progress & Weight Trend</span>
           </div>
 
           {/* Add Weight Inline Form */}

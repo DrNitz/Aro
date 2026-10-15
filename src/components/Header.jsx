@@ -11,7 +11,8 @@ import {
   Utensils, 
   Dumbbell, 
   Target, 
-  BookOpen
+  BookOpen,
+  Stethoscope
 } from 'lucide-react';
 
 export default function Header({
@@ -23,7 +24,8 @@ export default function Header({
   targetCalories,
   theme,
   toggleTheme,
-  onOpenDataModal
+  onOpenDataModal,
+  onOpenOnboarding
 }) {
   const isToday = () => {
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -135,7 +137,7 @@ export default function Header({
           })}
         </nav>
 
-        {/* Right Actions: Calorie Pill, Demo, Backup, Theme */}
+        {/* Right Actions: Calorie Pill, Clinical Profile, Backup, Theme */}
         <div className="header-actions">
           {/* Net Calorie Quick Stat */}
           <div className="net-calorie-pill" title="Daily Net Calories (Food - Exercise / Target)">
@@ -145,6 +147,19 @@ export default function Header({
               <span className="net-cal-target">/ {targetCalories.toLocaleString()} kcal</span>
             </div>
           </div>
+
+          {/* Clinical Profile Setup & Formulas Button */}
+          {onOpenOnboarding && (
+            <button 
+              className="btn btn-secondary btn-clinical-header" 
+              onClick={onOpenOnboarding}
+              title="Clinical Profile & Scientific Formulas"
+              aria-label="Clinical Profile"
+            >
+              <Stethoscope size={16} className="text-primary" />
+              <span className="btn-clinical-label">Clinical Profile</span>
+            </button>
+          )}
 
           {/* Backup / Export */}
           <button 
