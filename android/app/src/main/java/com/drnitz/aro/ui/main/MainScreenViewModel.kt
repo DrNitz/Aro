@@ -1,9 +1,9 @@
-package com.example.aro.ui.main
+package com.drnitz.aro.ui.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.aro.data.DataRepository
-import com.example.aro.ui.main.MainScreenUiState.Success
+import com.drnitz.aro.data.DataRepository
+import com.drnitz.aro.ui.main.MainScreenUiState.Success
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch

@@ -1,6 +1,6 @@
-package com.example.aro.ui.main
+package com.drnitz.aro.ui.main
 
-import com.example.aro.data.DataRepository
+import com.drnitz.aro.data.DataRepository
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first

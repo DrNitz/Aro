@@ -1,4 +1,4 @@
-package com.example.aro
+package com.drnitz.aro
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
