@@ -1,23 +1,15 @@
 import React, { useState } from 'react';
 import { 
-  Target, 
-  Flame, 
-  Activity, 
+  Target,
   TrendingDown, 
-  TrendingUp, 
-  Scale, 
   Check, 
-  Sparkles, 
   Plus, 
-  Award,
-  Heart,
   Stethoscope,
   BookOpen,
-  HelpCircle,
   ChevronDown,
-  ChevronUp,
-  Info
+  ChevronUp
 } from 'lucide-react';
+import { todayKey } from '../utils/dates';
 import { 
   calculateBMR, 
   calculateTDEE, 
@@ -30,10 +22,8 @@ export default function BodyPlannerView({
   profile,
   onUpdateProfile,
   weightHistory,
-  onLogWeight,
-  onOpenOnboarding
+  onLogWeight
 }) {
-  const [unitSystem, setUnitSystem] = useState('metric'); // 'metric' (kg, cm) | 'imperial' (lbs, in)
   const [showClinicalScience, setShowClinicalScience] = useState(true);
 
   const [form, setForm] = useState({
@@ -49,7 +39,7 @@ export default function BodyPlannerView({
   });
 
   const [newWeightInput, setNewWeightInput] = useState('');
-  const [newWeightDate, setNewWeightDate] = useState(new Date().toISOString().slice(0, 10));
+  const [newWeightDate, setNewWeightDate] = useState(todayKey());
 
   // Live calculations
   const bmr = calculateBMR(form.gender, Number(form.weightKg), Number(form.heightCm), Number(form.age));

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { X } from 'lucide-react';
 import Header from './components/Header';
 import DashboardView from './components/DashboardView';
 import FoodDatabaseView from './components/FoodDatabaseView';
@@ -28,14 +29,26 @@ import {
   createMealTemplate,
   deleteMealTemplate
 } from './services/storage';
+import { useEscapeKey } from './hooks/useEscapeKey';
+import { todayKey } from './utils/dates';
 import './App.css';
+
+const VALID_TABS = ['diary', 'food', 'exercise', 'goals'];
+
+// Supports the PWA manifest shortcuts (/#food, /#goals, ...) which previously
+// always fell back to the Diary tab.
+function getTabFromHash() {
+  if (typeof window === 'undefined') return null;
+  const raw = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+  return VALID_TABS.includes(raw) ? raw : null;
+}
 
 export default function App() {
   const [theme, setTheme] = useState(getStoredTheme());
-  const [activeTab, setActiveTab] = useState('diary');
+  const [activeTab, setActiveTabState] = useState(() => getTabFromHash() || 'diary');
   
-  // Current active date (YYYY-MM-DD)
-  const todayStr = new Date().toISOString().slice(0, 10);
+  // Current active date (local YYYY-MM-DD)
+  const todayStr = todayKey();
   const [currentDate, setCurrentDate] = useState(todayStr);
 
   // Core Data States
@@ -65,6 +78,32 @@ export default function App() {
     saveStoredTheme(theme);
   }, [theme]);
 
+  // Keep the tab in sync with the URL hash (deep links + browser back/forward)
+  useEffect(() => {
+    const syncFromHash = () => {
+      const tab = getTabFromHash();
+      if (tab) setActiveTabState(tab);
+    };
+    window.addEventListener('hashchange', syncFromHash);
+    return () => window.removeEventListener('hashchange', syncFromHash);
+  }, []);
+
+  // Single entry point for tab changes so the hash always reflects the view
+  const setActiveTab = (tab) => {
+    if (!VALID_TABS.includes(tab)) return;
+    setActiveTabState(tab);
+    if (getTabFromHash() !== tab) {
+      window.history.replaceState(null, '', `#${tab}`);
+    }
+  };
+
+  // Escape closes whichever app-level modal is open
+  useEscapeKey(() => {
+    setShowOnboardingModal(false);
+    setQuickWorkoutModal(false);
+    setShowDataModal(false);
+  }, showOnboardingModal || quickWorkoutModal || showDataModal);
+
   // Load Diary when currentDate changes
   useEffect(() => {
     const d = getDayDiary(currentDate);
@@ -77,12 +116,20 @@ export default function App() {
   };
 
   // Toast notification helper
-  const showToast = (msg) => {
+  const toastTimerRef = useRef(null);
+  const showToast = useCallback((msg) => {
     setToastMessage(msg);
-    setTimeout(() => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
       setToastMessage(null);
+      toastTimerRef.current = null;
     }, 3200);
-  };
+  }, []);
+
+  // Clear any pending toast timer when the app unmounts
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
 
   // Update Diary handler
   const handleUpdateDiary = (newDiary) => {
@@ -212,16 +259,17 @@ export default function App() {
     setActiveTab('diary');
   };
 
-  // Clear all data
+  // Clear all health/tracking data (keeps the chosen theme + onboarding state)
   const handleClearAllData = () => {
-    localStorage.clear();
+    [
+      'aro_user_profile', 'aro_diaries', 'aro_custom_foods', 'aro_weight_history',
+      'aro_fasting', 'aro_food_favorites', 'aro_recent_foods', 'aro_meal_templates'
+    ].forEach((key) => localStorage.removeItem(key));
+
+    const today = todayKey();
     setProfile(getProfile());
-    setDiary({
-      meals: { breakfast: [], lunch: [], dinner: [], snacks: [] },
-      workouts: [],
-      waterMl: 0,
-      notes: ""
-    });
+    setCurrentDate(today);
+    setDiary(getDayDiary(today));
     setCustomFoods([]);
     setWeightHistory([]);
     setFastingState(getFastingState());
@@ -276,6 +324,7 @@ export default function App() {
               mealTemplates={mealTemplates}
               onSaveMealTemplate={handleSaveMealTemplate}
               onLogTemplate={handleLogTemplate}
+              currentDate={currentDate}
             />
           )}
 
@@ -307,7 +356,6 @@ export default function App() {
               onUpdateProfile={handleUpdateProfile}
               weightHistory={weightHistory}
               onLogWeight={handleLogWeight}
-              onOpenOnboarding={() => setShowOnboardingModal(true)}
             />
           )}
         </div>
@@ -359,8 +407,18 @@ export default function App() {
 
       {/* Toast Notification Banner */}
       {toastMessage && (
-        <div className="toast-notification">
+        <div className="toast-notification" role="status" aria-live="polite">
           <span>{toastMessage}</span>
+          <button
+            className="toast-dismiss"
+            onClick={() => {
+              if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+              setToastMessage(null);
+            }}
+            aria-label="Dismiss notification"
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
     </div>

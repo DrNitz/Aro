@@ -9,8 +9,6 @@ import {
   Droplet, 
   Flame, 
   Dumbbell, 
-  Sparkles, 
-  ChevronRight, 
   Coffee, 
   Sun, 
   Moon, 
@@ -18,11 +16,11 @@ import {
   Play, 
   Pause, 
   RotateCcw,
-  CheckCircle2,
   Bookmark,
   Utensils,
   X,
-  Check
+  Check,
+  NotebookPen
 } from 'lucide-react';
 
 const MEAL_LABELS = {
@@ -42,8 +40,15 @@ export default function DashboardView({
   onUpdateFasting,
   mealTemplates = [],
   onSaveMealTemplate,
-  onLogTemplate
+  onLogTemplate,
+  currentDate
 }) {
+  const currentDateLabel = (() => {
+    if (!currentDate) return 'this day';
+    const d = new Date(`${currentDate}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return 'this day';
+    return d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  })();
   // Calculate Totals for the day
   const meals = diary.meals || { breakfast: [], lunch: [], dinner: [], snacks: [] };
   const workouts = diary.workouts || [];
@@ -69,6 +74,10 @@ export default function DashboardView({
   const totalSugar = allFoodLogs.reduce((acc, item) => acc + (item.sugar || 0), 0);
 
   const totalCaloriesBurned = workouts.reduce((acc, w) => acc + (w.caloriesBurned || 0), 0);
+
+  // Hydration target with a safe fallback (avoids NaN if the profile is partial)
+  const waterTarget = profile.targetWaterMl || 3000;
+  const waterPercent = Math.min(100, Math.round((waterMl / waterTarget) * 100));
 
   // Active Clinical Protocol state
   const [activeProtocolId, setActiveProtocolId] = useState(() => {
@@ -285,7 +294,7 @@ export default function DashboardView({
               <span>Hydration Tracker</span>
             </div>
             <span className="water-header-val mono">
-              <strong>{waterMl}</strong> / {profile.targetWaterMl || 3000} ml
+              <strong>{waterMl}</strong> / {waterTarget} ml
             </span>
           </div>
 
@@ -294,7 +303,7 @@ export default function DashboardView({
               <div className="water-fill-visual">
                 <div 
                   className="water-liquid"
-                  style={{ height: `${Math.min(100, Math.round((waterMl / (profile.targetWaterMl || 3000)) * 100))}%` }}
+                  style={{ height: `${waterPercent}%` }}
                 >
                   <div className="water-wave"></div>
                 </div>
@@ -302,11 +311,11 @@ export default function DashboardView({
 
               <div className="water-stats-col">
                 <span className="water-percent-big font-display">
-                  {Math.round((waterMl / (profile.targetWaterMl || 3000)) * 100)}%
+                  {waterPercent}%
                 </span>
                 <span className="water-stat-sub">
-                  {profile.targetWaterMl - waterMl > 0 
-                    ? `${profile.targetWaterMl - waterMl} ml remaining` 
+                  {waterTarget - waterMl > 0 
+                    ? `${waterTarget - waterMl} ml remaining` 
                     : 'Daily hydration goal complete! 💧'}
                 </span>
                 <div className="water-quick-buttons">
@@ -382,6 +391,30 @@ export default function DashboardView({
           </div>
         </div>
       )}
+
+      {/* Daily Notes / Journal */}
+      <div className="glass-card diary-notes-card">
+        <div className="card-header">
+          <div className="card-title">
+            <NotebookPen className="text-primary" size={20} />
+            <span>Daily Notes</span>
+          </div>
+          <span className="notes-hint">Meals, mood, training notes</span>
+        </div>
+        <div className="card-body">
+          <textarea
+            className="diary-notes-input"
+            aria-label={`Notes for ${currentDateLabel}`}
+            placeholder="How did today go? Track hunger, energy, cravings, meal prep, or anything you want to remember..."
+            value={diary.notes || ''}
+            maxLength={600}
+            onChange={(e) => onUpdateDiary({ ...diary, notes: e.target.value })}
+          />
+          <div className="notes-footer">
+            <span className="notes-count mono">{(diary.notes || '').length} / 600</span>
+          </div>
+        </div>
+      </div>
 
       {/* Meals Log Section */}
       <div className="meals-section-header">
@@ -571,10 +604,10 @@ export default function DashboardView({
       {/* Save Meal as Template Modal */}
       {templateModalMeal && (
         <div className="modal-overlay" onClick={() => setTemplateModalMeal(null)}>
-          <div className="modal-card save-template-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-card save-template-modal" role="dialog" aria-modal="true" aria-labelledby="save-template-title" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div className="modal-title-wrap">
-                <h3 className="modal-product-title">Save Meal Template</h3>
+                <h3 className="modal-product-title" id="save-template-title">Save Meal Template</h3>
                 <span className="modal-product-brand">
                   {MEAL_LABELS[templateModalMeal] || 'Meal'} • {(meals[templateModalMeal] || []).length} items
                 </span>

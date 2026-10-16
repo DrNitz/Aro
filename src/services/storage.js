@@ -1,6 +1,8 @@
 // Local storage persistence service for Aro
 // 100% private, offline-first client storage
 
+import { toDateKey } from '../utils/dates';
+
 const KEYS = {
   PROFILE: 'aro_user_profile',
   DIARIES: 'aro_diaries',
@@ -292,24 +294,66 @@ export function exportAllData() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `aro_health_backup_${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `aro_health_backup_${toDateKey(new Date())}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
 export function importAllData(jsonString) {
+  let data;
   try {
-    const data = JSON.parse(jsonString);
-    if (data.profile) saveProfile(data.profile);
-    if (data.diaries) saveStorage(KEYS.DIARIES, data.diaries);
-    if (data.customFoods) saveCustomFoods(data.customFoods);
-    if (data.weightHistory) saveStorage(KEYS.WEIGHT_HISTORY, data.weightHistory);
-    if (data.fasting) saveFastingState(data.fasting);
-    if (data.favorites) saveFavoriteFoods(data.favorites);
-    if (data.recents) saveRecentFoods(data.recents);
-    if (data.mealTemplates) saveMealTemplates(data.mealTemplates);
-    return { success: true };
+    data = JSON.parse(jsonString);
   } catch (err) {
-    return { success: false, error: err.message };
+    return { success: false, error: "This file isn't valid JSON." };
   }
+
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return { success: false, error: "Expected a Aro backup object at the root of the file." };
+  }
+
+  // Validate shapes before touching storage so a bad file can never
+  // partially overwrite good data.
+  const shapeErrors = [];
+  const expect = (key, predicate, label) => {
+    if (data[key] === undefined || data[key] === null) return;
+    if (!predicate(data[key])) shapeErrors.push(`"${key}" is not ${label}`);
+  };
+
+  expect("profile", (v) => typeof v === "object" && !Array.isArray(v), "an object");
+  expect("diaries", (v) => typeof v === "object" && !Array.isArray(v), "a diary map");
+  expect("customFoods", Array.isArray, "an array");
+  expect("weightHistory", Array.isArray, "an array");
+  expect("fasting", (v) => typeof v === "object" && !Array.isArray(v), "an object");
+  expect("favorites", Array.isArray, "an array");
+  expect("recents", Array.isArray, "an array");
+  expect("mealTemplates", Array.isArray, "an array");
+
+  const knownKeys = [
+    "profile", "diaries", "customFoods", "weightHistory",
+    "fasting", "favorites", "recents", "mealTemplates"
+  ];
+  const hasAnyData = knownKeys.some((k) => data[k] !== undefined && data[k] !== null);
+
+  if (!hasAnyData) {
+    return {
+      success: false,
+      error: "No Aro data found in this file. Export a backup from the app first."
+    };
+  }
+
+  if (shapeErrors.length > 0) {
+    return { success: false, error: `Unreadable backup (${shapeErrors.join(", ")}).` };
+  }
+
+  // All-or-nothing: only write once the whole payload has passed validation.
+  if (data.profile) saveProfile(data.profile);
+  if (data.diaries) saveStorage(KEYS.DIARIES, data.diaries);
+  if (data.customFoods) saveCustomFoods(data.customFoods);
+  if (data.weightHistory) saveStorage(KEYS.WEIGHT_HISTORY, data.weightHistory);
+  if (data.fasting) saveFastingState(data.fasting);
+  if (data.favorites) saveFavoriteFoods(data.favorites);
+  if (data.recents) saveRecentFoods(data.recents);
+  if (data.mealTemplates) saveMealTemplates(data.mealTemplates);
+
+  return { success: true };
 }

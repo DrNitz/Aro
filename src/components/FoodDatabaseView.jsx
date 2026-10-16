@@ -18,6 +18,7 @@ import {
 import { CURATED_FOODS } from '../data/curatedFoods';
 import { searchOpenFoodFacts } from '../services/openFoodFacts';
 import { getTemplateTotals } from '../services/storage';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 import FoodDetailModal from './FoodDetailModal';
 import BarcodeScannerModal from './BarcodeScannerModal';
 
@@ -56,6 +57,11 @@ export default function FoodDatabaseView({
   const recentFoodList = (recentFoods || [])
     .map((r) => r.food)
     .filter(Boolean);
+
+  useEscapeKey(
+    () => setShowCustomFoodModal(false),
+    showCustomFoodModal
+  );
 
   // Combined local catalog
   const combinedLocalFoods = [...customFoods, ...CURATED_FOODS];
@@ -407,7 +413,8 @@ export default function FoodDatabaseView({
           <div className="search-field-box">
             <Search size={20} className="search-icon" />
             <input
-              type="text"
+              type="search"
+              aria-label="Search foods, dishes, or brands"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search foods, dishes, or brands (e.g. Roti, Chips, Greek Yogurt)..."
@@ -550,10 +557,16 @@ export default function FoodDatabaseView({
       {/* Create Custom Food Modal */}
       {showCustomFoodModal && (
         <div className="modal-overlay" onClick={() => setShowCustomFoodModal(false)}>
-          <div className="modal-card custom-food-modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-card custom-food-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="custom-food-title"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
-              <h3 className="modal-product-title">Create Custom Food / Recipe</h3>
-              <button className="btn-icon btn-secondary" onClick={() => setShowCustomFoodModal(false)}>
+              <h3 className="modal-product-title" id="custom-food-title">Create Custom Food / Recipe</h3>
+              <button className="btn-icon btn-secondary" onClick={() => setShowCustomFoodModal(false)} aria-label="Close custom food form">
                 <X size={18} />
               </button>
             </div>

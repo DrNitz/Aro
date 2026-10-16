@@ -7,13 +7,13 @@ import {
   Sun, 
   Moon, 
   Download, 
-  Sparkles,
   Utensils, 
   Dumbbell, 
   Target, 
   BookOpen,
   Stethoscope
 } from 'lucide-react';
+import { addDays, isTodayKey, todayKey, formatDateLabel } from '../utils/dates';
 
 export default function Header({
   activeTab,
@@ -27,32 +27,12 @@ export default function Header({
   onOpenDataModal,
   onOpenOnboarding
 }) {
-  const isToday = () => {
-    const todayStr = new Date().toISOString().slice(0, 10);
-    return currentDate === todayStr;
-  };
+  const isToday = () => isTodayKey(currentDate);
 
-  const handlePrevDay = () => {
-    const d = new Date(currentDate + "T00:00:00");
-    d.setDate(d.getDate() - 1);
-    setCurrentDate(d.toISOString().slice(0, 10));
-  };
+  const handlePrevDay = () => setCurrentDate(addDays(currentDate, -1));
+  const handleNextDay = () => setCurrentDate(addDays(currentDate, 1));
 
-  const handleNextDay = () => {
-    const d = new Date(currentDate + "T00:00:00");
-    d.setDate(d.getDate() + 1);
-    setCurrentDate(d.toISOString().slice(0, 10));
-  };
-
-  const handleSetToday = () => {
-    setCurrentDate(new Date().toISOString().slice(0, 10));
-  };
-
-  const formatDateDisplay = (dateStr) => {
-    const d = new Date(dateStr + "T00:00:00");
-    const options = { weekday: 'short', month: 'short', day: 'numeric' };
-    return d.toLocaleDateString(undefined, options);
-  };
+  const handleSetToday = () => setCurrentDate(todayKey());
 
   const navItems = [
     { id: 'diary', label: 'Diary', icon: BookOpen },
@@ -91,13 +71,14 @@ export default function Header({
             <div className="date-display-pill">
               <Calendar size={15} className="date-icon" />
               <input 
-                type="date" 
+                type="date"
+                aria-label="Diary date"
                 value={currentDate} 
                 onChange={(e) => setCurrentDate(e.target.value)}
                 className="date-input-overlay"
               />
               <span className="date-label">
-                {isToday() ? 'Today, ' : ''}{formatDateDisplay(currentDate)}
+                {isToday() ? 'Today, ' : ''}{formatDateLabel(currentDate)}
               </span>
             </div>
 
@@ -127,6 +108,7 @@ export default function Header({
               <button
                 key={item.id}
                 className={`nav-tab ${isActive ? 'nav-tab-active' : ''}`}
+                aria-current={isActive ? 'page' : undefined}
                 onClick={() => setActiveTab(item.id)}
               >
                 <Icon size={17} />
@@ -192,6 +174,8 @@ export default function Header({
             <button
               key={item.id}
               className={`mobile-nav-btn ${isActive ? 'mobile-nav-active' : ''}`}
+              aria-current={isActive ? 'page' : undefined}
+              aria-label={item.label}
               onClick={() => setActiveTab(item.id)}
             >
               <Icon size={20} />

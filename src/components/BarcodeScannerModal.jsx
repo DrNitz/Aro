@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Scan, Camera, Search, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { X, Scan, Camera, Search, AlertCircle, Loader2, Sparkles, Info } from 'lucide-react';
 import { fetchProductByBarcode } from '../services/openFoodFacts';
 import { CURATED_FOODS } from '../data/curatedFoods';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 export default function BarcodeScannerModal({
   onClose,
@@ -13,8 +14,17 @@ export default function BarcodeScannerModal({
   const [cameraActive, setCameraActive] = useState(false);
   const [hasCameraSupport, setHasCameraSupport] = useState(true);
 
+  // Native live decoding is only available in Chromium-based browsers.
+  // Detect up-front so Safari/iOS never shows a viewfinder that cannot scan.
+  const [detectorSupported] = useState(
+    () => typeof window !== 'undefined' && 'BarcodeDetector' in window
+  );
+
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const detectIntervalRef = useRef(null);
+
+  useEscapeKey(onClose);
 
   // Test barcode presets
   const sampleBarcodes = [
@@ -62,6 +72,13 @@ export default function BarcodeScannerModal({
 
   const startCamera = async () => {
     setError('');
+
+    if (!detectorSupported) {
+      setHasCameraSupport(false);
+      setError('Live camera scanning is not supported in this browser (it is available in Chrome and Edge). Please type the barcode number below instead.');
+      return;
+    }
+
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         setHasCameraSupport(false);
@@ -79,30 +96,27 @@ export default function BarcodeScannerModal({
       }
       setCameraActive(true);
 
-      // Check for native BarcodeDetector API
-      if ('BarcodeDetector' in window) {
-        const detector = new window.BarcodeDetector({
-          formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code']
-        });
+      const detector = new window.BarcodeDetector({
+        formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code']
+      });
 
-        const detectInterval = setInterval(async () => {
-          if (!videoRef.current || !streamRef.current) {
-            clearInterval(detectInterval);
-            return;
+      detectIntervalRef.current = setInterval(async () => {
+        if (!videoRef.current || !streamRef.current) {
+          clearInterval(detectIntervalRef.current);
+          return;
+        }
+        try {
+          const barcodes = await detector.detect(videoRef.current);
+          if (barcodes.length > 0) {
+            const detected = barcodes[0].rawValue;
+            clearInterval(detectIntervalRef.current);
+            setBarcodeInput(detected);
+            handleLookup(detected);
           }
-          try {
-            const barcodes = await detector.detect(videoRef.current);
-            if (barcodes.length > 0) {
-              const detected = barcodes[0].rawValue;
-              clearInterval(detectInterval);
-              setBarcodeInput(detected);
-              handleLookup(detected);
-            }
-          } catch {
-            // detection frame skip
-          }
-        }, 500);
-      }
+        } catch {
+          // detection frame skip
+        }
+      }, 500);
     } catch (err) {
       setHasCameraSupport(false);
       setError('Unable to access camera. Please allow camera permissions or enter the barcode manually.');
@@ -110,6 +124,10 @@ export default function BarcodeScannerModal({
   };
 
   const stopCamera = () => {
+    if (detectIntervalRef.current) {
+      clearInterval(detectIntervalRef.current);
+      detectIntervalRef.current = null;
+    }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -125,13 +143,13 @@ export default function BarcodeScannerModal({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card barcode-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-card barcode-modal" role="dialog" aria-modal="true" aria-labelledby="barcode-modal-title" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-title-wrap">
             <Scan className="text-primary" size={22} />
-            <h3 className="modal-product-title">Barcode Scanner</h3>
+            <h3 className="modal-product-title" id="barcode-modal-title">Barcode Scanner</h3>
           </div>
-          <button className="btn-icon btn-secondary" onClick={onClose}>
+          <button className="btn-icon btn-secondary" onClick={onClose} aria-label="Close barcode scanner">
             <X size={18} />
           </button>
         </div>
@@ -149,26 +167,43 @@ export default function BarcodeScannerModal({
                 Stop Camera
               </button>
             </div>
-          ) : (
+          ) : hasCameraSupport ? (
             <div className="camera-placeholder-card" onClick={startCamera}>
               <div className="camera-icon-circle">
                 <Camera size={28} className="text-primary" />
               </div>
               <h4 className="camera-prompt-title">Scan Packaged Food</h4>
               <p className="camera-prompt-sub">Use your phone or webcam to scan any UPC/EAN barcode directly</p>
-              <button className="btn btn-primary btn-sm">
+              <button className="btn btn-primary btn-sm" type="button">
                 <Camera size={15} />
                 <span>Open Camera Scanner</span>
               </button>
+            </div>
+          ) : (
+            <div className="camera-placeholder-card camera-unavailable-card">
+              <div className="camera-icon-circle">
+                <Camera size={28} className="text-dim" />
+              </div>
+              <h4 className="camera-prompt-title">Camera scanning unavailable</h4>
+              <p className="camera-prompt-sub">
+                Your browser doesn&apos;t support live barcode detection. Type the numbers printed under the barcode instead — the lookup below works everywhere.
+              </p>
+              <div className="camera-fallback-hint">
+                <Info size={13} />
+                <span>Tip: most bars are in Chrome or Edge on desktop, or Chrome on Android.</span>
+              </div>
             </div>
           )}
 
           {/* Manual Barcode Input */}
           <div className="manual-barcode-section">
-            <label className="input-label">Or Enter Barcode (EAN-13 / UPC)</label>
+            <label className="input-label" htmlFor="barcode-manual-input">Or Enter Barcode (EAN-13 / UPC)</label>
             <div className="manual-input-row">
               <input
+                id="barcode-manual-input"
                 type="text"
+                inputMode="numeric"
+                autoComplete="off"
                 placeholder="e.g. 3017620422003"
                 value={barcodeInput}
                 onChange={(e) => setBarcodeInput(e.target.value)}

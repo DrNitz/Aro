@@ -4223,14 +4223,17 @@
 [data-theme="light"] .app-container::before { opacity: 0.32; }
 [data-theme="light"] .app-container::after { opacity: 0.26; }
 
-/* --- View switch transition -------------------------------------------- */
+/* --- View switch transition --------------------------------------------
+   Opacity-only on purpose: a lingering `transform` on this wrapper would
+   make it the containing block for `position: fixed` descendants, which
+   silently displaces every modal rendered inside a tab. */
 @keyframes viewFadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .view-fade {
-  animation: viewFadeIn 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: viewFadeIn 0.3s ease-out both;
 }
 
 /* --- Subtle top sheen on every glass card ------------------------------ */
@@ -4600,6 +4603,329 @@
   .food-card:hover .food-card-img {
     transform: none;
   }
+}
+
+/* ==========================================================
+   UX HARDENING: TOUCH TARGETS, KEYBOARD A11Y & MOBILE SAFETY
+   ========================================================== */
+
+/* --- Global overflow guard: nothing should scroll the page sideways --- */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.app-container {
+  overflow-x: hidden;
+}
+
+/* --- Remove the iOS tap flash and add press feedback --- */
+button,
+a,
+.category-chip,
+.collection-tab,
+.food-card,
+.meal-empty-hint,
+.backup-box {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.985);
+}
+
+.category-chip:active,
+.collection-tab:active {
+  transform: scale(0.95);
+}
+
+/* --- Visible keyboard focus everywhere --- */
+:focus-visible {
+  outline: 2px solid var(--primary-light);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.focus-ring:focus-visible,
+.category-chip:focus-visible,
+.collection-tab:focus-visible {
+  outline: 2px solid var(--primary-light);
+  outline-offset: 2px;
+}
+
+/* --- Comfortable touch targets (44px minimum per WCAG 2.5.5) --- */
+@media (pointer: coarse) {
+  .btn-icon,
+  .btn-delete-item,
+  .btn-date-arrow,
+  .clear-search-btn,
+  .food-card-fav-btn,
+  .btn-delete-item,
+  .btn-open-detail {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .category-chip,
+  .collection-tab {
+    min-height: 40px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+
+  .btn-sm {
+    min-height: 40px;
+  }
+}
+
+/* Desktop keeps the compact look, but still needs a decent target */
+.btn-icon {
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.btn-delete-item {
+  min-width: 36px;
+  min-height: 36px;
+}
+
+/* --- Horizontal scroll rows: momentum + edge affordance --- */
+.category-chips-row,
+.templates-strip,
+.meal-macros-pill {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.category-chips-row {
+  scroll-snap-type: x proximity;
+  padding-bottom: 6px;
+}
+
+.category-chips-row .category-chip {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* --- Modal safe areas (iPhone home indicator) --- */
+.modal-footer {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 640px) {
+  .modal-footer {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .modal-card {
+    max-height: 92vh;
+  }
+}
+
+/* --- Sticky, comfortable modal headers while scrolling content --- */
+.modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-card-solid);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  backdrop-filter: var(--backdrop-blur);
+}
+
+/* --- Diary Notes Card --- */
+.diary-notes-card {
+  margin-bottom: 24px;
+}
+
+.notes-hint {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+}
+
+.diary-notes-input {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  transition: border-color var(--transition-fast);
+}
+
+.diary-notes-input::placeholder {
+  color: var(--text-dim);
+}
+
+.diary-notes-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.notes-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.notes-count {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+}
+
+/* --- Exercise pagination --- */
+.load-more-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 0 8px;
+}
+
+.load-more-btn {
+  min-height: 46px;
+}
+
+.load-more-hint {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+}
+
+/* --- Exercise card stretched-link pattern ---
+   The whole card becomes the tap target while staying a single
+   keyboard focus stop (the "Expand Form & Guide" button). */
+.exercise-card {
+  position: relative;
+}
+
+.btn-open-detail::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: var(--radius-lg);
+}
+
+.btn-stacked-above {
+  position: relative;
+  z-index: 3;
+}
+
+.exercise-card:focus-within {
+  border-color: var(--primary);
+}
+
+/* --- Toast dismiss --- */
+.toast-notification {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(420px, calc(100vw - 32px));
+}
+
+.toast-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.toast-dismiss:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+/* --- Barcode: camera unavailable state --- */
+.camera-unavailable-card {
+  cursor: default;
+  border-style: dashed;
+}
+
+.camera-fallback-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  background: var(--bg-chip);
+  border-radius: var(--radius-full);
+  padding: 5px 11px;
+}
+
+/* --- Backup boxes are real buttons now: reset button chrome --- */
+button.backup-box {
+  font-family: inherit;
+  color: inherit;
+  text-align: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+}
+
+/* --- Small-phone typography & spacing --- */
+@media (max-width: 480px) {
+  .banner-title {
+    font-size: 1.2rem;
+  }
+
+  .banner-sub {
+    font-size: 0.8rem;
+  }
+
+  .card-header,
+  .card-body {
+    padding: 16px 14px;
+  }
+
+  .modal-header,
+  .modal-body {
+    padding: 14px;
+  }
+
+  .btn-confirm-onboarding {
+    min-width: 0;
+  }
+
+  .meal-header-right {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .meal-macros-pill {
+    font-size: 0.74rem;
+    padding: 4px 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .banner-title {
+    font-size: 1.1rem;
+  }
+
+  .mobile-nav-btn {
+    font-size: 0.66rem;
+    padding: 6px 6px;
+    min-width: 0;
+  }
+
+  .collection-tab span:not(.collection-count) {
+    font-size: 0.75rem;
+  }
+}
+
+/* --- Avoid layout shift when a user taps a fixed control --- */
+.fixed-control-anchor {
+  scroll-margin-bottom: 120px;
 }
 
 

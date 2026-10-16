@@ -1,5 +1,4 @@
 import React from 'react';
-import { Flame, Beef, Wheat, Droplets, Sparkles } from 'lucide-react';
 
 export default function MacroRing({
   caloriesEaten,

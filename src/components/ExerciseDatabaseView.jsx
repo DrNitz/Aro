@@ -1,25 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Dumbbell, 
   Search, 
-  Filter, 
   Flame, 
   Activity, 
   ChevronDown, 
-  ChevronUp, 
-  Check, 
-  Info, 
   Plus, 
-  Layers,
-  Sparkles,
-  Zap,
-  Maximize2,
   X,
   Eye,
   BookOpen
 } from 'lucide-react';
 import { MET_ACTIVITIES } from '../data/metActivities';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 import WorkoutLoggerModal from './WorkoutLoggerModal';
+
+// How many exercise cards are revealed per "Load more" tap
+const PAGE_SIZE = 24;
 
 export default function ExerciseDatabaseView({
   userWeightKg = 75,
@@ -33,6 +29,7 @@ export default function ExerciseDatabaseView({
   const [selectedLevel, setSelectedLevel] = useState('All');
   const [selectedExerciseForLogging, setSelectedExerciseForLogging] = useState(null);
   const [selectedExerciseDetail, setSelectedExerciseDetail] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // Load exercises.json from public directory
   useEffect(() => {
@@ -126,20 +123,46 @@ export default function ExerciseDatabaseView({
     'Abdominals'
   ];
 
-  const equipmentFilters = [
-    'All',
-    'Barbell',
-    'Dumbbell',
-    'Body only',
-    'Cable',
-    'Machine',
-    'Kettlebells',
-    'Bands'
-  ];
+  // Filter options are derived from the dataset so they can never drift
+  // out of sync with the real values (e.g. the DB uses beginner/intermediate/expert).
+  const availableLevels = useMemo(() => {
+    const levels = new Set(exercises.map((ex) => ex.level).filter(Boolean));
+    const order = ['beginner', 'intermediate', 'expert'];
+    return order.filter((l) => levels.has(l));
+  }, [exercises]);
 
-  const toggleExpand = (id) => {
-    setExpandedExerciseId(expandedExerciseId === id ? null : id);
-  };
+  const availableEquipment = useMemo(() => {
+    const items = new Set(exercises.map((ex) => ex.equipment).filter(Boolean));
+    return [...items].sort((a, b) => a.localeCompare(b));
+  }, [exercises]);
+
+  const equipmentFilters = ['All', ...availableEquipment];
+  const levelFilters = ['All', ...availableLevels];
+
+  // If the chosen level no longer exists, fall back to All
+  useEffect(() => {
+    if (selectedLevel !== 'All' && !availableLevels.includes(selectedLevel)) {
+      setSelectedLevel('All');
+    }
+  }, [availableLevels, selectedLevel]);
+
+  useEffect(() => {
+    if (selectedEquipment !== 'All' && !availableEquipment.includes(selectedEquipment)) {
+      setSelectedEquipment('All');
+    }
+  }, [availableEquipment, selectedEquipment]);
+
+  // Reset pagination whenever the result set changes so the user never
+  // lands on an empty page after filtering.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery, selectedMuscle, selectedEquipment, selectedLevel]);
+
+  // Escape closes the open form-guide popup / workout logger
+  useEscapeKey(() => {
+    setSelectedExerciseDetail(null);
+    setSelectedExerciseForLogging(null);
+  }, !!(selectedExerciseDetail || selectedExerciseForLogging));
 
   const getExerciseImageUrl = (imagePath) => {
     if (!imagePath) return null;
@@ -184,13 +207,18 @@ export default function ExerciseDatabaseView({
           <Search size={20} className="search-icon" />
           <input
             type="text"
+            aria-label="Search exercises by name, equipment, or muscle"
             placeholder="Search 870+ exercises (e.g. Bench Press, Squat, Pull-up, Bicep Curl)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="food-search-input"
           />
           {searchQuery && (
-            <button className="clear-search-btn" onClick={() => setSearchQuery('')}>
+            <button
+              className="clear-search-btn"
+              onClick={() => setSearchQuery('')}
+              aria-label="Clear exercise search"
+            >
               ×
             </button>
           )}
@@ -204,6 +232,7 @@ export default function ExerciseDatabaseView({
               <button
                 key={m}
                 className={`category-chip ${selectedMuscle === m ? 'category-chip-active' : ''}`}
+                aria-pressed={selectedMuscle === m}
                 onClick={() => setSelectedMuscle(m)}
               >
                 {m}
@@ -220,9 +249,27 @@ export default function ExerciseDatabaseView({
               <button
                 key={eq}
                 className={`category-chip ${selectedEquipment === eq ? 'category-chip-active' : ''}`}
+                aria-pressed={selectedEquipment === eq}
                 onClick={() => setSelectedEquipment(eq)}
               >
                 {eq}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Difficulty / Level Filter Chips */}
+        <div className="filter-group-block">
+          <span className="filter-group-label">Difficulty:</span>
+          <div className="category-chips-row">
+            {levelFilters.map((lv) => (
+              <button
+                key={lv}
+                className={`category-chip ${selectedLevel === lv ? 'category-chip-active' : ''}`}
+                aria-pressed={selectedLevel === lv}
+                onClick={() => setSelectedLevel(lv)}
+              >
+                {lv === 'All' ? 'All Levels' : lv.charAt(0).toUpperCase() + lv.slice(1)}
               </button>
             ))}
           </div>
@@ -231,8 +278,8 @@ export default function ExerciseDatabaseView({
 
       {/* Exercises Grid Header */}
       <div className="exercise-results-header">
-        <span className="results-count mono">
-          Showing {filteredExercises.length} of {exercises.length} exercises
+        <span className="results-count mono" role="status" aria-live="polite">
+          Showing {Math.min(visibleCount, filteredExercises.length)} of {filteredExercises.length} exercises
         </span>
       </div>
 
@@ -247,14 +294,15 @@ export default function ExerciseDatabaseView({
           <p>No exercises found matching your filter criteria.</p>
           <button 
             className="btn btn-secondary btn-sm"
-            onClick={() => { setSelectedMuscle('All'); setSelectedEquipment('All'); setSearchQuery(''); }}
+            onClick={() => { setSelectedMuscle('All'); setSelectedEquipment('All'); setSelectedLevel('All'); setSearchQuery(''); }}
           >
             Clear Filters
           </button>
         </div>
       ) : (
-        <div className="exercise-cards-grid">
-          {filteredExercises.slice(0, 60).map((ex) => {
+        <>
+          <div className="exercise-cards-grid">
+            {filteredExercises.slice(0, visibleCount).map((ex) => {
             const primaryMuscle = ex.primaryMuscles?.[0] || 'General';
             const hasImages = ex.images && ex.images.length > 0;
             const thumbUrl = hasImages ? getExerciseImageUrl(ex.images[0]) : null;
@@ -263,8 +311,7 @@ export default function ExerciseDatabaseView({
               <div 
                 key={ex.id} 
                 className="glass-card exercise-card"
-                onClick={() => setSelectedExerciseDetail(ex)}
-                title="Click to view both expanded demonstration postures & biomechanics"
+                title="View expanded demonstration postures & biomechanics"
               >
                 {/* Small Thumbnail */}
                 <div className="exercise-thumb-wrap">
@@ -309,13 +356,13 @@ export default function ExerciseDatabaseView({
                   )}
 
                   <div className="exercise-card-actions-compact">
+                    {/* Stretched-link pattern: the whole card is the tap target
+                        while the button remains a single keyboard focus stop. */}
                     <button 
                       type="button"
                       className="btn-open-detail"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedExerciseDetail(ex);
-                      }}
+                      onClick={() => setSelectedExerciseDetail(ex)}
+                      aria-label={`View form guide for ${ex.name}`}
                     >
                       <Eye size={13} />
                       <span>Expand Form & Guide</span>
@@ -323,11 +370,8 @@ export default function ExerciseDatabaseView({
 
                     <button
                       type="button"
-                      className="btn btn-primary btn-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedExerciseForLogging(ex);
-                      }}
+                      className="btn btn-primary btn-sm btn-stacked-above"
+                      onClick={() => setSelectedExerciseForLogging(ex)}
                       title="Log sets into diary"
                     >
                       <Plus size={13} />
@@ -338,7 +382,25 @@ export default function ExerciseDatabaseView({
               </div>
             );
           })}
-        </div>
+          </div>
+
+          {visibleCount < filteredExercises.length && (
+            <div className="load-more-wrap">
+              <button
+                className="btn btn-outline-primary load-more-btn"
+                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+              >
+                <ChevronDown size={16} />
+                <span>
+                  Load {Math.min(PAGE_SIZE, filteredExercises.length - visibleCount)} more
+                </span>
+              </button>
+              <span className="load-more-hint mono">
+                {filteredExercises.length - visibleCount} remaining
+              </span>
+            </div>
+          )}
+        </>
       )}
 
       {/* Cool Glassy Popup: Dual Expanded Images + Instructions Downside */}
@@ -348,7 +410,10 @@ export default function ExerciseDatabaseView({
           onClick={() => setSelectedExerciseDetail(null)}
         >
           <div 
-            className="glassy-popup-card" 
+            className="glassy-popup-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${selectedExerciseDetail.name} form guide`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}

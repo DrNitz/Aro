@@ -1,19 +1,11 @@
 import React, { useState } from 'react';
 import { 
-  Heart, 
-  Target, 
   Activity, 
   Check, 
-  Award, 
-  HelpCircle, 
   Sparkles, 
-  Scale, 
   BookOpen, 
-  ChevronRight,
   ShieldCheck,
-  Stethoscope,
-  X,
-  Info
+  X
 } from 'lucide-react';
 import { 
   calculateBMR, 
@@ -22,12 +14,15 @@ import {
   calculateBMI 
 } from '../utils/calculations';
 import confetti from 'canvas-confetti';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 export default function OnboardingModal({
   currentProfile,
   onComplete,
   onClose
 }) {
+  // Escape skips onboarding (same as the Skip button)
+  useEscapeKey(onClose);
   const [form, setForm] = useState({
     name: currentProfile.name || '',
     gender: currentProfile.gender || 'male',
@@ -91,11 +86,11 @@ export default function OnboardingModal({
   return (
     <div className="modal-overlay onboarding-overlay" onClick={onClose}>
       <div 
-        className="modal-card onboarding-card" 
-        onClick={(e) => e.stopPropagation()}
+        className="modal-card onboarding-card"
         role="dialog"
         aria-modal="true"
         aria-labelledby="onboarding-dialog-title"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Senior UI Header with Mascot & Close Button */}
         <div className="onboarding-header">

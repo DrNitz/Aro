@@ -6,10 +6,10 @@ import {
   ShieldCheck, 
   Trash2, 
   AlertTriangle, 
-  Check, 
-  FileText 
+  Check
 } from 'lucide-react';
 import { exportAllData, importAllData } from '../services/storage';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 export default function DataManagementModal({
   onClose,
@@ -19,6 +19,8 @@ export default function DataManagementModal({
   const fileInputRef = useRef(null);
   const [importStatus, setImportStatus] = useState(null);
   const [confirmClear, setConfirmClear] = useState(false);
+
+  useEscapeKey(onClose);
 
   const handleExport = () => {
     exportAllData();
@@ -47,13 +49,19 @@ export default function DataManagementModal({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card data-management-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-card data-management-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="data-mgmt-title"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-header">
           <div className="modal-title-wrap">
             <ShieldCheck className="text-primary" size={22} />
-            <h3 className="modal-product-title">Privacy & Data Management</h3>
+            <h3 className="modal-product-title" id="data-mgmt-title">Privacy & Data Management</h3>
           </div>
-          <button className="btn-icon btn-secondary" onClick={onClose}>
+          <button className="btn-icon btn-secondary" onClick={onClose} aria-label="Close data management">
             <X size={18} />
           </button>
         </div>
@@ -70,36 +78,41 @@ export default function DataManagementModal({
 
           {/* Export & Import Grid */}
           <div className="backup-options-grid grid-2">
-            <div className="glass-card backup-box" onClick={handleExport}>
+            <button type="button" className="backup-box glass-card" onClick={handleExport}>
               <Download size={24} className="text-primary" />
               <h4>Export Backup</h4>
               <p>Download a complete JSON file containing your logs, recipes, and targets.</p>
-              <button className="btn btn-primary btn-sm">
+              <span className="btn btn-primary btn-sm">
                 <Download size={14} />
                 <span>Export JSON</span>
-              </button>
-            </div>
+              </span>
+            </button>
 
-            <div className="glass-card backup-box" onClick={() => fileInputRef.current?.click()}>
+            <button type="button" className="backup-box glass-card" onClick={() => fileInputRef.current?.click()}>
               <Upload size={24} className="text-cyan" />
               <h4>Restore Backup</h4>
               <p>Import your previously saved Aro backup file to restore all entries.</p>
-              <button className="btn btn-secondary btn-sm">
+              <span className="btn btn-secondary btn-sm">
                 <Upload size={14} />
                 <span>Upload JSON</span>
-              </button>
+              </span>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".json"
+                accept=".json,application/json"
                 style={{ display: 'none' }}
                 onChange={handleFileChange}
+                aria-label="Upload Aro backup file"
               />
-            </div>
+            </button>
           </div>
 
           {importStatus && (
-            <div className={`status-banner ${importStatus.type === 'success' ? 'status-success' : 'status-error'}`}>
+            <div
+              className={`status-banner ${importStatus.type === 'success' ? 'status-success' : 'status-error'}`}
+              role="status"
+              aria-live="polite"
+            >
               {importStatus.type === 'success' ? <Check size={16} /> : <AlertTriangle size={16} />}
               <span>{importStatus.msg}</span>
             </div>

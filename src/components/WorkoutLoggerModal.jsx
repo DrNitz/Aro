@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Check, Plus, Trash2, Dumbbell, Flame, Activity, Zap } from 'lucide-react';
+import { X, Check, Plus, Trash2, Flame } from 'lucide-react';
 import { calculateOneRepMax } from '../utils/calculations';
 import { calculateCaloriesBurned, MET_ACTIVITIES } from '../data/metActivities';
 import confetti from 'canvas-confetti';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 export default function WorkoutLoggerModal({
   exercise,
@@ -11,6 +12,8 @@ export default function WorkoutLoggerModal({
   onLogWorkout
 }) {
   const isCardio = exercise?.category === 'cardio' || exercise?.isCardioActivity;
+
+  useEscapeKey(onClose);
 
   // Strength Sets State
   const [sets, setSets] = useState([
@@ -119,7 +122,7 @@ export default function WorkoutLoggerModal({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card workout-logger-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-card workout-logger-modal" role="dialog" aria-modal="true" aria-label={`Log workout: ${exercise?.name || 'workout'}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-title-wrap">
             <h3 className="modal-product-title">{exercise.name}</h3>

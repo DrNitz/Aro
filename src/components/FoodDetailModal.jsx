@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Check, Flame, Plus, Minus, Info } from 'lucide-react';
+import { X, Check, Flame, Plus, Minus } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 export default function FoodDetailModal({
   food,
@@ -10,6 +11,8 @@ export default function FoodDetailModal({
 }) {
   const [mealType, setMealType] = useState(initialMealType);
   const [grams, setGrams] = useState(food.commonServing?.grams || 100);
+
+  useEscapeKey(onClose);
 
   if (!food) return null;
 
@@ -87,7 +90,13 @@ export default function FoodDetailModal({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card food-detail-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-card food-detail-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Add ${food.name} to your diary`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Modal Header */}
         <div className="modal-header">
           <div className="modal-title-wrap">
@@ -140,7 +149,7 @@ export default function FoodDetailModal({
 
           {/* Portion Selector */}
           <div className="portion-control-card glass-card">
-            <label className="input-label">Select Serving / Quantity (grams)</label>
+            <label className="input-label" htmlFor="portion-grams-input">Select Serving / Quantity (grams)</label>
             <div className="portion-input-row">
               <button 
                 className="btn btn-secondary btn-icon" 
@@ -151,7 +160,9 @@ export default function FoodDetailModal({
               
               <div className="portion-input-wrap">
                 <input
+                  id="portion-grams-input"
                   type="number"
+                  inputMode="numeric"
                   min="1"
                   max="2000"
                   value={grams}
