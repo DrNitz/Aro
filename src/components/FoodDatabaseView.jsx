@@ -3,29 +3,46 @@ import {
   Search, 
   Scan, 
   Plus, 
-  Flame, 
-  Filter, 
   Globe, 
   Sparkles, 
   Loader2, 
   Check, 
   X,
   Apple,
-  Info
+  Star,
+  History,
+  Bookmark,
+  Trash2,
+  Utensils
 } from 'lucide-react';
 import { CURATED_FOODS } from '../data/curatedFoods';
 import { searchOpenFoodFacts } from '../services/openFoodFacts';
+import { getTemplateTotals } from '../services/storage';
 import FoodDetailModal from './FoodDetailModal';
 import BarcodeScannerModal from './BarcodeScannerModal';
+
+const MEAL_LABELS = {
+  breakfast: '🍳 Breakfast',
+  lunch: '🥗 Lunch',
+  dinner: '🍽️ Dinner',
+  snacks: '🍎 Snacks'
+};
 
 export default function FoodDatabaseView({
   targetMeal = 'breakfast',
   customFoods = [],
   onSaveCustomFood,
-  onAddFoodToDiary
+  onAddFoodToDiary,
+  favoriteFoods = [],
+  recentFoods = [],
+  mealTemplates = [],
+  onToggleFavorite,
+  onDeleteMealTemplate,
+  onLogTemplate
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [viewMode, setViewMode] = useState('all');
   const [selectedFood, setSelectedFood] = useState(null);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [showCustomFoodModal, setShowCustomFoodModal] = useState(false);
@@ -35,21 +52,40 @@ export default function FoodDatabaseView({
   const [isSearchingLive, setIsSearchingLive] = useState(false);
   const [liveSearchedQuery, setLiveSearchedQuery] = useState('');
 
+  const favoriteIds = new Set((favoriteFoods || []).map((f) => f.id));
+  const recentFoodList = (recentFoods || [])
+    .map((r) => r.food)
+    .filter(Boolean);
+
   // Combined local catalog
   const combinedLocalFoods = [...customFoods, ...CURATED_FOODS];
 
-  // Filter local foods
-  const filteredLocalFoods = combinedLocalFoods.filter((food) => {
-    const matchesSearch = food.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (food.brand && food.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (food.category && food.category.toLowerCase().includes(searchQuery.toLowerCase()));
+  const matchesQuery = (food) => {
+    const q = searchQuery.toLowerCase();
+    if (!q) return true;
+    return (
+      (food.name && food.name.toLowerCase().includes(q)) ||
+      (food.brand && food.brand.toLowerCase().includes(q)) ||
+      (food.category && food.category.toLowerCase().includes(q))
+    );
+  };
 
-    if (!matchesSearch) return false;
+  // Filter local foods (used in the "All Foods" collection)
+  const filteredLocalFoods = combinedLocalFoods.filter((food) => {
+    if (!matchesQuery(food)) return false;
     if (selectedCategory === 'All') return true;
     if (selectedCategory === 'High Protein') return food.protein >= 15;
     if (selectedCategory === 'Low Calorie') return food.calories <= 60;
-    return food.category.toLowerCase().includes(selectedCategory.toLowerCase());
+    return food.category && food.category.toLowerCase().includes(selectedCategory.toLowerCase());
   });
+
+  // Which foods are shown based on the active collection
+  const displayedFoods =
+    viewMode === 'favorites'
+      ? favoriteFoods.filter(matchesQuery)
+      : viewMode === 'recents'
+        ? recentFoodList.filter(matchesQuery)
+        : filteredLocalFoods;
 
   // Clear live search results when query is emptied
   useEffect(() => {
@@ -78,6 +114,13 @@ export default function FoodDatabaseView({
     }
   };
 
+  const collections = [
+    { id: 'all', label: 'All Foods', icon: Apple, count: null },
+    { id: 'favorites', label: 'Favorites', icon: Star, count: favoriteFoods.length },
+    { id: 'recents', label: 'Recents', icon: History, count: recentFoodList.length },
+    { id: 'templates', label: 'Meal Templates', icon: Bookmark, count: mealTemplates.length }
+  ];
+
   const categories = [
     'All',
     'High Protein',
@@ -85,10 +128,18 @@ export default function FoodDatabaseView({
     'Meat & Poultry',
     'Fish & Seafood',
     'Dairy & Eggs',
+    'Dairy Alternatives',
     'Fruits',
+    'Fruits & Healthy Fats',
     'Vegetables',
     'Grains & Cereals',
-    'Nuts & Seeds'
+    'Bakery',
+    'Nuts & Seeds',
+    'Plant Proteins',
+    'Oils & Fats',
+    'Spreads & Sweet',
+    'Beverages',
+    'Supplements'
   ];
 
   // Custom Food Form State
@@ -133,6 +184,192 @@ export default function FoodDatabaseView({
     setShowCustomFoodModal(false);
     setSelectedFood(newFood);
   };
+
+  // Reusable food card (used for live results, collections & local catalog)
+  const renderFoodCard = (food) => {
+    const isFav = favoriteIds.has(food.id);
+    return (
+      <div
+        key={food.id}
+        className="glass-card food-card"
+        onClick={() => setSelectedFood(food)}
+      >
+        <div className="food-card-top">
+          {food.image ? (
+            <img
+              src={food.image}
+              alt={food.name}
+              className="food-card-img"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          ) : (
+            <div className="food-card-img-fallback">🥗</div>
+          )}
+
+          <div className="food-card-badges">
+            {food.nutriscore && (
+              <span className={`badge badge-nutriscore-${food.nutriscore}`}>
+                Score {food.nutriscore.toUpperCase()}
+              </span>
+            )}
+            {food.nova && (
+              <span className={`badge badge-nova-${food.nova}`}>
+                NOVA {food.nova}
+              </span>
+            )}
+            {food.isCustom && (
+              <span className="badge badge-purple">Custom</span>
+            )}
+          </div>
+        </div>
+
+        <div className="food-card-info">
+          <h4 className="food-card-name" title={food.name}>{food.name}</h4>
+          <span className="food-card-brand">{food.brand}</span>
+
+          <div className="food-card-macros mono">
+            <span className="macro-tag-cal">{food.calories} kcal</span>
+            <span className="text-protein">{food.protein}g P</span>
+            <span className="text-carbs">{food.carbs}g C</span>
+            <span className="text-fat">{food.fat}g F</span>
+          </div>
+
+          <div className="food-card-footer">
+            <span className="per-100g-hint">per 100g</span>
+            <button
+              type="button"
+              className={`food-card-fav-btn ${isFav ? 'is-fav' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onToggleFavorite) onToggleFavorite(food);
+              }}
+              title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+              aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              <Star size={15} fill={isFav ? 'currentColor' : 'none'} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderEmptyState = () => {
+    if (viewMode === 'favorites') {
+      return (
+        <div className="no-foods-card glass-card">
+          <Star size={36} className="text-dim" />
+          <p>No favorites yet. Tap the ⭐ on any food to save it here for one-tap logging.</p>
+        </div>
+      );
+    }
+    if (viewMode === 'recents') {
+      return (
+        <div className="no-foods-card glass-card">
+          <History size={36} className="text-dim" />
+          <p>Foods you log will show up here automatically for quick re-adding.</p>
+        </div>
+      );
+    }
+    if (isSearchingLive) {
+      return (
+        <div className="no-foods-card glass-card">
+          <Loader2 size={32} className="spin text-cyan" />
+          <p>Searching Open Food Facts global database for "{searchQuery}"...</p>
+        </div>
+      );
+    }
+    return (
+      <div className="no-foods-card glass-card">
+        <Apple size={36} className="text-dim" />
+        <p>No verified local foods match "{searchQuery}".</p>
+        <button className="btn btn-primary btn-sm" onClick={handleSearchOpenFoodFacts} disabled={isSearchingLive}>
+          <Globe size={15} />
+          <span>Search Open Food Facts API for "{searchQuery}"</span>
+        </button>
+      </div>
+    );
+  };
+
+  const renderTemplates = () => {
+    if (mealTemplates.length === 0) {
+      return (
+        <div className="no-foods-card glass-card">
+          <Bookmark size={36} className="text-dim" />
+          <p>
+            No meal templates yet. Open a meal in your Diary and tap the
+            <Bookmark size={14} style={{ verticalAlign: 'middle', margin: '0 3px' }} />
+            save button to reuse it in one tap.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="templates-grid grid-3">
+        {mealTemplates.map((tpl) => {
+          const totals = getTemplateTotals(tpl);
+          const mealLabel = MEAL_LABELS[tpl.mealType] || 'Meal';
+          return (
+            <div key={tpl.id} className="glass-card template-card">
+              <div className="template-card-head">
+                <div className="template-icon-pill">
+                  <Bookmark size={16} />
+                </div>
+                <div className="template-head-text">
+                  <h4 className="template-name" title={tpl.name}>{tpl.name}</h4>
+                  <span className="template-meta">{mealLabel} • {totals.count} items</span>
+                </div>
+                <button
+                  className="btn-delete-item"
+                  onClick={() => onDeleteMealTemplate && onDeleteMealTemplate(tpl.id)}
+                  title="Delete template"
+                  aria-label="Delete template"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+
+              <div className="template-totals mono">
+                <span className="macro-tag-cal">{Math.round(totals.calories)} kcal</span>
+                <span className="text-protein">{Math.round(totals.protein)}g P</span>
+                <span className="text-carbs">{Math.round(totals.carbs)}g C</span>
+                <span className="text-fat">{Math.round(totals.fat)}g F</span>
+              </div>
+
+              <div className="template-items-preview">
+                {tpl.items.slice(0, 3).map((item, idx) => (
+                  <span key={idx} className="template-item-chip" title={item.name}>
+                    {item.name}
+                  </span>
+                ))}
+                {tpl.items.length > 3 && (
+                  <span className="template-item-more">+{tpl.items.length - 3} more</span>
+                )}
+              </div>
+
+              <button
+                className="btn btn-primary btn-sm template-log-btn"
+                onClick={() => onLogTemplate && onLogTemplate(tpl)}
+              >
+                <Utensils size={14} />
+                <span>Log to {mealLabel}</span>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const sectionTitle =
+    viewMode === 'favorites'
+      ? 'Your Favorite Foods'
+      : viewMode === 'recents'
+        ? 'Recently Logged Foods'
+        : viewMode === 'templates'
+          ? 'Saved Meal Templates'
+          : 'Verified Staples & Offline Database';
 
   return (
     <div className="food-database-view">
@@ -198,22 +435,45 @@ export default function FoodDatabaseView({
           </button>
         </form>
 
-        {/* Category Filter Pills */}
-        <div className="category-chips-row">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              className={`category-chip ${selectedCategory === cat ? 'category-chip-active' : ''}`}
-              onClick={() => setSelectedCategory(cat)}
-            >
-              {cat}
-            </button>
-          ))}
+        {/* Collection Tabs */}
+        <div className="collection-tabs-row">
+          {collections.map((col) => {
+            const Icon = col.icon;
+            const isActive = viewMode === col.id;
+            return (
+              <button
+                key={col.id}
+                className={`collection-tab ${isActive ? 'collection-tab-active' : ''}`}
+                onClick={() => setViewMode(col.id)}
+              >
+                <Icon size={15} fill={col.id === 'favorites' && isActive ? 'currentColor' : 'none'} />
+                <span>{col.label}</span>
+                {col.count !== null && col.count > 0 && (
+                  <span className="collection-count mono">{col.count}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
+
+        {/* Category Filter Pills (for the full catalog only) */}
+        {viewMode === 'all' && (
+          <div className="category-chips-row">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                className={`category-chip ${selectedCategory === cat ? 'category-chip-active' : ''}`}
+                onClick={() => setSelectedCategory(cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Live Open Food Facts Results (If searched) */}
-      {liveResults.length > 0 && (
+      {liveResults.length > 0 && viewMode === 'all' && (
         <div className="live-results-section">
           <div className="results-header-row">
             <div className="results-title-group">
@@ -224,125 +484,45 @@ export default function FoodDatabaseView({
           </div>
 
           <div className="food-cards-grid grid-3">
-            {liveResults.map((food) => (
-              <div 
-                key={food.id} 
-                className="glass-card food-card"
-                onClick={() => setSelectedFood(food)}
-              >
-                <div className="food-card-top">
-                  {food.image ? (
-                    <img src={food.image} alt={food.name} className="food-card-img" onError={(e) => { e.target.style.display = 'none'; }} />
-                  ) : (
-                    <div className="food-card-img-fallback">🍎</div>
-                  )}
-
-                  <div className="food-card-badges">
-                    {food.nutriscore && (
-                      <span className={`badge badge-nutriscore-${food.nutriscore}`}>
-                        Score {food.nutriscore.toUpperCase()}
-                      </span>
-                    )}
-                    {food.nova && (
-                      <span className={`badge badge-nova-${food.nova}`}>
-                        NOVA {food.nova}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="food-card-info">
-                  <h4 className="food-card-name" title={food.name}>{food.name}</h4>
-                  <span className="food-card-brand">{food.brand || 'Open Food Facts'}</span>
-
-                  <div className="food-card-macros mono">
-                    <span className="macro-tag-cal">{food.calories} kcal</span>
-                    <span className="text-protein">{food.protein}g P</span>
-                    <span className="text-carbs">{food.carbs}g C</span>
-                    <span className="text-fat">{food.fat}g F</span>
-                  </div>
-
-                  <span className="per-100g-hint">per 100g</span>
-                </div>
-              </div>
-            ))}
+            {liveResults.map((food) => renderFoodCard(food))}
           </div>
         </div>
       )}
 
-      {/* Verified Local & Curated Foods */}
+      {/* Curated / Collections Section */}
       <div className="local-results-section">
         <div className="results-header-row">
           <div className="results-title-group">
-            <Sparkles size={18} className="text-amber" />
-            <h3 className="results-title">Verified Staples & Offline Database</h3>
+            {viewMode === 'favorites' ? (
+              <Star size={18} className="text-amber" fill="currentColor" />
+            ) : viewMode === 'recents' ? (
+              <History size={18} className="text-cyan" />
+            ) : viewMode === 'templates' ? (
+              <Bookmark size={18} className="text-primary" />
+            ) : (
+              <Sparkles size={18} className="text-amber" />
+            )}
+            <h3 className="results-title">{sectionTitle}</h3>
           </div>
-          <span className="results-count mono">{filteredLocalFoods.length} items</span>
+          <span className="results-count mono">
+            {viewMode === 'templates' ? `${mealTemplates.length} templates` : `${displayedFoods.length} items`}
+          </span>
         </div>
 
-        {isSearchingLive && liveResults.length === 0 ? (
-          <div className="no-foods-card glass-card">
-            <Loader2 size={32} className="spin text-cyan" />
-            <p>Searching Open Food Facts global database for "{searchQuery}"...</p>
+        {viewMode === 'templates' ? (
+          renderTemplates()
+        ) : displayedFoods.length > 0 ? (
+          <div className="food-cards-grid grid-3">
+            {displayedFoods.map((food) => renderFoodCard(food))}
           </div>
-        ) : filteredLocalFoods.length === 0 && liveResults.length === 0 ? (
-          <div className="no-foods-card glass-card">
-            <Apple size={36} className="text-dim" />
-            <p>No verified local foods match "{searchQuery}".</p>
-            <button className="btn btn-primary btn-sm" onClick={handleSearchOpenFoodFacts} disabled={isSearchingLive}>
-              <Globe size={15} />
-              <span>Search Open Food Facts API for "{searchQuery}"</span>
-            </button>
-          </div>
-        ) : filteredLocalFoods.length === 0 && liveResults.length > 0 ? (
+        ) : viewMode === 'all' && liveResults.length > 0 ? (
           <div className="no-foods-card glass-card" style={{ padding: '16px' }}>
             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Showing {liveResults.length} Open Food Facts products for "{searchQuery}" above.
             </p>
           </div>
         ) : (
-          <div className="food-cards-grid grid-3">
-            {filteredLocalFoods.map((food) => (
-              <div 
-                key={food.id} 
-                className="glass-card food-card"
-                onClick={() => setSelectedFood(food)}
-              >
-                <div className="food-card-top">
-                  {food.image ? (
-                    <img src={food.image} alt={food.name} className="food-card-img" onError={(e) => { e.target.style.display = 'none'; }} />
-                  ) : (
-                    <div className="food-card-img-fallback">🥗</div>
-                  )}
-
-                  <div className="food-card-badges">
-                    {food.nutriscore && (
-                      <span className={`badge badge-nutriscore-${food.nutriscore}`}>
-                        Score {food.nutriscore.toUpperCase()}
-                      </span>
-                    )}
-                    {food.isCustom && (
-                      <span className="badge badge-purple">Custom</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="food-card-info">
-                  <h4 className="food-card-name" title={food.name}>{food.name}</h4>
-                  <span className="food-card-brand">{food.brand}</span>
-
-                  <div className="food-card-macros mono">
-                    <span className="macro-tag-cal">{food.calories} kcal</span>
-                    <span className="text-protein">{food.protein}g P</span>
-                    <span className="text-carbs">{food.carbs}g C</span>
-                    <span className="text-fat">{food.fat}g F</span>
-                  </div>
-
-                  <span className="per-100g-hint">per 100g</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          renderEmptyState()
         )}
       </div>
 

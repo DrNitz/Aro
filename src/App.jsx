@@ -19,7 +19,14 @@ import {
   getFastingState,
   saveFastingState,
   getStoredTheme,
-  saveStoredTheme
+  saveStoredTheme,
+  getFavoriteFoods,
+  toggleFavoriteFood,
+  getRecentFoods,
+  addRecentFood,
+  getMealTemplates,
+  createMealTemplate,
+  deleteMealTemplate
 } from './services/storage';
 import './App.css';
 
@@ -37,6 +44,9 @@ export default function App() {
   const [customFoods, setCustomFoods] = useState(getCustomFoods());
   const [weightHistory, setWeightHistory] = useState(getWeightHistory());
   const [fastingState, setFastingState] = useState(getFastingState());
+  const [favoriteFoods, setFavoriteFoods] = useState(getFavoriteFoods());
+  const [recentFoods, setRecentFoods] = useState(getRecentFoods());
+  const [mealTemplates, setMealTemplates] = useState(getMealTemplates());
 
   // First-time visitor clinical onboarding state
   const [showOnboardingModal, setShowOnboardingModal] = useState(() => {
@@ -119,7 +129,7 @@ export default function App() {
   };
 
   // Add Food to Diary from search / detail modal
-  const handleAddFoodToDiary = (foodLogItem) => {
+  const handleAddFoodToDiary = (foodLogItem, sourceFood) => {
     const meal = foodLogItem.mealType || targetMealForAdd || 'breakfast';
     const currentMealList = diary.meals?.[meal] || [];
     const updatedDiary = {
@@ -130,7 +140,63 @@ export default function App() {
       }
     };
     handleUpdateDiary(updatedDiary);
+
+    // Remember this food in the "Recents" collection
+    const foodToRemember = sourceFood || foodLogItem.food;
+    if (foodToRemember && foodToRemember.id) {
+      setRecentFoods(addRecentFood(foodToRemember));
+    }
+
     showToast(`Added ${foodLogItem.name} (${foodLogItem.grams}g) to ${meal.toUpperCase()}! ✨`);
+    setActiveTab('diary');
+  };
+
+  // Toggle a food in/out of Favorites
+  const handleToggleFavorite = (food) => {
+    if (!food) return;
+    const updated = toggleFavoriteFood(food);
+    setFavoriteFoods(updated);
+    const nowFav = updated.some((f) => f.id === food.id);
+    showToast(nowFav ? `Saved ${food.name} to Favorites ⭐` : `Removed ${food.name} from Favorites`);
+  };
+
+  // Save the current contents of a meal as a reusable template
+  const handleSaveMealTemplate = (name, mealType, items) => {
+    if (!items || items.length === 0) {
+      showToast('Add some foods to this meal before saving a template.');
+      return;
+    }
+    const { templates } = createMealTemplate(name, mealType, items);
+    setMealTemplates(templates);
+    showToast(`Saved "${name}" as a meal template 📋`);
+  };
+
+  // Delete a saved meal template
+  const handleDeleteMealTemplate = (templateId) => {
+    setMealTemplates(deleteMealTemplate(templateId));
+    showToast('Meal template deleted.');
+  };
+
+  // Log every item of a template into the diary at once
+  const handleLogTemplate = (template, mealOverride) => {
+    if (!template) return;
+    const meal = mealOverride || template.mealType || 'breakfast';
+    const currentMealList = diary.meals?.[meal] || [];
+    const stamped = (template.items || []).map((item, idx) => ({
+      ...item,
+      id: `log-tpl-${template.id}-${Date.now()}-${idx}`,
+      mealType: meal
+    }));
+    const updatedDiary = {
+      ...diary,
+      meals: {
+        ...(diary.meals || {}),
+        [meal]: [...currentMealList, ...stamped]
+      }
+    };
+    handleUpdateDiary(updatedDiary);
+    const kcal = stamped.reduce((acc, i) => acc + (i.calories || 0), 0);
+    showToast(`Logged "${template.name}" (${stamped.length} items, ${kcal} kcal) to ${meal.toUpperCase()}! 🍽️`);
     setActiveTab('diary');
   };
 
@@ -159,6 +225,9 @@ export default function App() {
     setCustomFoods([]);
     setWeightHistory([]);
     setFastingState(getFastingState());
+    setFavoriteFoods([]);
+    setRecentFoods([]);
+    setMealTemplates([]);
     showToast('Cleared all local data.');
   };
 
@@ -191,46 +260,57 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="main-content">
-        {activeTab === 'diary' && (
-          <DashboardView
-            diary={diary}
-            profile={profile}
-            onUpdateDiary={handleUpdateDiary}
-            onOpenAddFood={(mealType) => {
-              setTargetMealForAdd(mealType);
-              setActiveTab('food');
-            }}
-            onOpenLogWorkout={() => setQuickWorkoutModal(true)}
-            fastingState={fastingState}
-            onUpdateFasting={handleUpdateFasting}
-          />
-        )}
+        <div className="view-fade" key={activeTab}>
+          {activeTab === 'diary' && (
+            <DashboardView
+              diary={diary}
+              profile={profile}
+              onUpdateDiary={handleUpdateDiary}
+              onOpenAddFood={(mealType) => {
+                setTargetMealForAdd(mealType);
+                setActiveTab('food');
+              }}
+              onOpenLogWorkout={() => setQuickWorkoutModal(true)}
+              fastingState={fastingState}
+              onUpdateFasting={handleUpdateFasting}
+              mealTemplates={mealTemplates}
+              onSaveMealTemplate={handleSaveMealTemplate}
+              onLogTemplate={handleLogTemplate}
+            />
+          )}
 
-        {activeTab === 'food' && (
-          <FoodDatabaseView
-            targetMeal={targetMealForAdd}
-            customFoods={customFoods}
-            onSaveCustomFood={handleSaveCustomFood}
-            onAddFoodToDiary={handleAddFoodToDiary}
-          />
-        )}
+          {activeTab === 'food' && (
+            <FoodDatabaseView
+              targetMeal={targetMealForAdd}
+              customFoods={customFoods}
+              onSaveCustomFood={handleSaveCustomFood}
+              onAddFoodToDiary={handleAddFoodToDiary}
+              favoriteFoods={favoriteFoods}
+              recentFoods={recentFoods}
+              mealTemplates={mealTemplates}
+              onToggleFavorite={handleToggleFavorite}
+              onDeleteMealTemplate={handleDeleteMealTemplate}
+              onLogTemplate={handleLogTemplate}
+            />
+          )}
 
-        {activeTab === 'exercise' && (
-          <ExerciseDatabaseView
-            userWeightKg={profile.weightKg || 75}
-            onLogWorkout={handleLogWorkoutToDiary}
-          />
-        )}
+          {activeTab === 'exercise' && (
+            <ExerciseDatabaseView
+              userWeightKg={profile.weightKg || 75}
+              onLogWorkout={handleLogWorkoutToDiary}
+            />
+          )}
 
-        {activeTab === 'goals' && (
-          <BodyPlannerView
-            profile={profile}
-            onUpdateProfile={handleUpdateProfile}
-            weightHistory={weightHistory}
-            onLogWeight={handleLogWeight}
-            onOpenOnboarding={() => setShowOnboardingModal(true)}
-          />
-        )}
+          {activeTab === 'goals' && (
+            <BodyPlannerView
+              profile={profile}
+              onUpdateProfile={handleUpdateProfile}
+              weightHistory={weightHistory}
+              onLogWeight={handleLogWeight}
+              onOpenOnboarding={() => setShowOnboardingModal(true)}
+            />
+          )}
+        </div>
       </main>
 
       {/* First-Time Visitor Clinical Onboarding Modal */}
@@ -268,6 +348,9 @@ export default function App() {
             setCustomFoods(getCustomFoods());
             setWeightHistory(getWeightHistory());
             setFastingState(getFastingState());
+            setFavoriteFoods(getFavoriteFoods());
+            setRecentFoods(getRecentFoods());
+            setMealTemplates(getMealTemplates());
             showToast('Backup restored successfully!');
           }}
           onClearAllData={handleClearAllData}

@@ -61,7 +61,7 @@ export default function FoodDetailModal({
       nutriscore: food.nutriscore,
       nova: food.nova,
       mealType
-    });
+    }, food);
 
     onClose();
   };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MacroRing from './MacroRing';
 import ClinicalAuditPanel from './ClinicalAuditPanel';
+import { getTemplateTotals } from '../services/storage';
 import { 
   Plus, 
   Trash2, 
@@ -17,8 +18,19 @@ import {
   Play, 
   Pause, 
   RotateCcw,
-  CheckCircle2
+  CheckCircle2,
+  Bookmark,
+  Utensils,
+  X,
+  Check
 } from 'lucide-react';
+
+const MEAL_LABELS = {
+  breakfast: 'Breakfast',
+  lunch: 'Lunch',
+  dinner: 'Dinner',
+  snacks: 'Snacks'
+};
 
 export default function DashboardView({
   diary,
@@ -27,7 +39,10 @@ export default function DashboardView({
   onOpenAddFood,
   onOpenLogWorkout,
   fastingState,
-  onUpdateFasting
+  onUpdateFasting,
+  mealTemplates = [],
+  onSaveMealTemplate,
+  onLogTemplate
 }) {
   // Calculate Totals for the day
   const meals = diary.meals || { breakfast: [], lunch: [], dinner: [], snacks: [] };
@@ -130,6 +145,29 @@ export default function DashboardView({
     if (hours < 12) return "Fat Burning Prep (Insulin drops)";
     if (hours < 16) return "Ketosis & Accelerated Fat Burning";
     return "Deep Autophagy & Cellular Renewal";
+  };
+
+  // Meal template save modal
+  const [templateModalMeal, setTemplateModalMeal] = useState(null);
+  const [templateName, setTemplateName] = useState('');
+
+  const openTemplateModal = (mealKey) => {
+    setTemplateModalMeal(mealKey);
+    setTemplateName(`${MEAL_LABELS[mealKey] || 'Meal'} Favorites`);
+  };
+
+  const handleConfirmTemplate = () => {
+    if (!templateModalMeal) return;
+    const items = meals[templateModalMeal] || [];
+    if (onSaveMealTemplate) {
+      onSaveMealTemplate(
+        templateName.trim() || `${MEAL_LABELS[templateModalMeal] || 'Meal'} Template`,
+        templateModalMeal,
+        items
+      );
+    }
+    setTemplateModalMeal(null);
+    setTemplateName('');
   };
 
   // Delete Food Item
@@ -309,6 +347,42 @@ export default function DashboardView({
         onSelectProtocol={handleSelectProtocol}
       />
 
+      {/* Quick Log Saved Meal Templates */}
+      {mealTemplates.length > 0 && (
+        <div className="templates-strip-wrap glass-card">
+          <div className="templates-strip-head">
+            <div className="results-title-group">
+              <Bookmark size={16} className="text-primary" />
+              <span className="templates-strip-title">Quick Log a Saved Meal</span>
+            </div>
+            <span className="templates-strip-sub">One tap to re-add a full meal</span>
+          </div>
+          <div className="templates-strip">
+            {mealTemplates.map((tpl) => {
+              const totals = getTemplateTotals(tpl);
+              return (
+                <button
+                  key={tpl.id}
+                  className="template-chip"
+                  onClick={() => onLogTemplate && onLogTemplate(tpl)}
+                  title={`Log "${tpl.name}" to ${MEAL_LABELS[tpl.mealType] || 'meal'}`}
+                >
+                  <span className="template-chip-icon">
+                    <Utensils size={14} />
+                  </span>
+                  <span className="template-chip-text">
+                    <span className="template-chip-name">{tpl.name}</span>
+                    <span className="template-chip-meta mono">
+                      {totals.count} items • {Math.round(totals.calories)} kcal
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Meals Log Section */}
       <div className="meals-section-header">
         <h2 className="section-title">Today's Meals & Nutrition</h2>
@@ -345,6 +419,17 @@ export default function DashboardView({
                     <span className="text-carbs">{Math.round(mealCarbs)}C</span>
                     <span className="text-fat">{Math.round(mealFat)}F</span>
                   </div>
+
+                  {items.length > 0 && onSaveMealTemplate && (
+                    <button 
+                      className="btn btn-secondary btn-sm meal-save-tpl-btn"
+                      onClick={() => openTemplateModal(sec.key)}
+                      title={`Save ${sec.title} as a reusable meal template`}
+                    >
+                      <Bookmark size={14} />
+                      <span className="btn-label-hide-sm">Save</span>
+                    </button>
+                  )}
 
                   <button 
                     className="btn btn-primary btn-sm"
@@ -482,6 +567,54 @@ export default function DashboardView({
           )}
         </div>
       </div>
+
+      {/* Save Meal as Template Modal */}
+      {templateModalMeal && (
+        <div className="modal-overlay" onClick={() => setTemplateModalMeal(null)}>
+          <div className="modal-card save-template-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title-wrap">
+                <h3 className="modal-product-title">Save Meal Template</h3>
+                <span className="modal-product-brand">
+                  {MEAL_LABELS[templateModalMeal] || 'Meal'} • {(meals[templateModalMeal] || []).length} items
+                </span>
+              </div>
+              <button className="btn-icon btn-secondary" onClick={() => setTemplateModalMeal(null)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="input-group">
+                <label className="input-label">Template Name</label>
+                <input
+                  type="text"
+                  autoFocus
+                  className="input-field"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  placeholder="e.g. Weekday Breakfast"
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleConfirmTemplate(); }}
+                />
+              </div>
+              <p className="template-modal-hint">
+                You can re-log every item in this meal with a single tap from your Diary or the
+                Food &amp; Nutrition tab.
+              </p>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setTemplateModalMeal(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={handleConfirmTemplate}>
+                <Check size={16} />
+                <span>Save Template</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

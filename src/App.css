@@ -4185,4 +4185,422 @@
   margin: 0;
 }
 
+/* ==========================================================
+   FOOD COLLECTIONS: FAVORITES, RECENTS & MEAL TEMPLATES
+   + VISUAL POLISH PASS
+   ========================================================== */
+
+/* --- Ambient background glow ------------------------------------------- */
+.app-container {
+  position: relative;
+}
+
+.app-container::before,
+.app-container::after {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.55;
+}
+
+.app-container::before {
+  top: -170px;
+  left: -150px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.28), transparent 70%);
+}
+
+.app-container::after {
+  bottom: -210px;
+  right: -170px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.24), transparent 70%);
+}
+
+[data-theme="light"] .app-container::before { opacity: 0.32; }
+[data-theme="light"] .app-container::after { opacity: 0.26; }
+
+/* --- View switch transition -------------------------------------------- */
+@keyframes viewFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.view-fade {
+  animation: viewFadeIn 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* --- Subtle top sheen on every glass card ------------------------------ */
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  pointer-events: none;
+}
+
+[data-theme="light"] .glass-card::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+}
+
+/* --- Collection tabs (All / Favorites / Recents / Templates) ----------- */
+.collection-tabs-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.collection-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: var(--radius-full);
+  background: var(--bg-chip);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.collection-tab:hover {
+  color: var(--text-main);
+  border-color: var(--border-medium);
+  transform: translateY(-1px);
+}
+
+.collection-tab-active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(56, 189, 248, 0.14));
+  border-color: var(--primary);
+  color: var(--text-main);
+  box-shadow: 0 2px 12px var(--primary-glow);
+}
+
+.collection-tab-active svg {
+  color: var(--primary-light);
+}
+
+.collection-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  color: #ffffff;
+}
+
+/* --- Food card: favorites footer & richer hover ------------------------ */
+.food-card {
+  position: relative;
+}
+
+.food-card::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--color-carbs), var(--color-protein));
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.food-card:hover::after {
+  opacity: 1;
+}
+
+.food-card-img {
+  transition: transform var(--transition-normal);
+}
+
+.food-card:hover .food-card-img {
+  transform: scale(1.06);
+}
+
+.food-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.food-card-fav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--bg-chip);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.food-card-fav-btn:hover {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.5);
+  transform: scale(1.12);
+}
+
+.food-card-fav-btn.is-fav {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+/* --- Meal template cards ---------------------------------------------- */
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.template-card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all var(--transition-normal);
+}
+
+.template-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.template-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.template-icon-pill {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.template-head-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.template-name {
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-meta {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+}
+
+.template-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.82rem;
+}
+
+.template-items-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.template-item-chip {
+  font-size: 0.72rem;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  background: var(--bg-chip);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-item-more {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  align-self: center;
+}
+
+.template-log-btn {
+  width: 100%;
+  margin-top: auto;
+}
+
+/* --- Diary quick-log templates strip ---------------------------------- */
+.templates-strip-wrap {
+  padding: 16px 18px;
+  margin-bottom: 24px;
+}
+
+.templates-strip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.templates-strip-title {
+  font-weight: 700;
+  font-size: 0.98rem;
+}
+
+.templates-strip-sub {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.templates-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.template-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--bg-chip);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.template-chip:hover {
+  border-color: var(--primary);
+  background: rgba(16, 185, 129, 0.1);
+  transform: translateY(-1px);
+}
+
+.template-chip-icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.template-chip-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.template-chip-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.template-chip-meta {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+/* --- Save-template modal ---------------------------------------------- */
+.save-template-modal {
+  max-width: 460px;
+}
+
+.template-modal-hint {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-top: 12px;
+  line-height: 1.45;
+}
+
+/* --- Search banner depth ---------------------------------------------- */
+.food-search-banner {
+  border-color: var(--border-medium);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="light"] .food-search-banner {
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08), inset 0 1px 0 #ffffff;
+}
+
+/* --- Meal block hover -------------------------------------------------- */
+.meal-block {
+  transition: border-color var(--transition-normal);
+}
+
+.meal-block:hover {
+  border-color: var(--border-medium);
+}
+
+/* --- Responsive tweaks ------------------------------------------------- */
+.btn-label-hide-sm {
+  display: inline;
+}
+
+@media (max-width: 960px) {
+  .templates-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .templates-grid {
+    grid-template-columns: 1fr;
+  }
+  .btn-label-hide-sm {
+    display: none;
+  }
+  .templates-strip-wrap {
+    padding: 14px;
+  }
+  .collection-tab {
+    font-size: 0.78rem;
+    padding: 6px 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-fade {
+    animation: none;
+  }
+  .food-card:hover .food-card-img {
+    transform: none;
+  }
+}
+
+
 

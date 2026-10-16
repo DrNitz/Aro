@@ -24,6 +24,7 @@ A privacy-first, open-source nutrition, calorie, macro, and workout tracking web
 * **Barcode Scanner**: Camera-based live scanner and manual EAN-13 / UPC lookup with quick test presets (Nutella, Coca-Cola Zero, Barilla, etc.).
 * **Verified Whole Foods Offline Database**: Instant sub-millisecond search for staple whole foods (chicken breast, oats, avocado, salmon, eggs, fruits, veggies).
 * **Custom Food Creator**: Easily create and save homemade recipes with personalized macros.
+* **Favorites, Recents & Meal Templates**: Star any food (curated, scanned, or Open Food Facts) for one-tap access, auto-collect recently logged foods, and save a full meal as a reusable template you can re-log in a single tap.
 
 ### 4. 🏋️ Open Exercise Database & Workout Logger
 * **870+ Public Domain Exercises**: Comprehensive exercise directory with muscle targeting, equipment requirements, difficulty, and step-by-step instructions.
